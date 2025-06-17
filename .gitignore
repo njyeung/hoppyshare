@@ -1,0 +1,91 @@
+# Certificate and key files
+*.crt
+*.key
+*.pem
+*.csr
+*.srl
+
+# Certificate authority files
+ca.crt
+ca.key
+ca-crl.pem
+
+# SSL/TLS certificates and keys
+server.crt
+server.key
+device*.crt
+device*.key
+lambda.crt
+lambda.key
+watchdog.crt
+watchdog.key
+
+# Certificate database and serial files
+index.txt*
+crlnumber*
+serial*
+newcerts/
+
+# Mosquitto specific files
+mosquitto.db
+passwd
+*.acl
+merged_acl.txt
+
+# Docker volumes and data
+data/
+mosquitto-docker/data/
+
+# Configuration files that might contain secrets
+baseACL
+dynamic_acl/
+
+# OpenSSL configuration (if it contains sensitive info)
+openssl.cnf
+
+# Go binary files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test binary, built with `go test -c`
+*.test
+
+# Go coverage files
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Backup files
+*.bak
+*.backup

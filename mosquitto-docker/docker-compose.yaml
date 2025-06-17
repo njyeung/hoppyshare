@@ -1,0 +1,46 @@
+version: '3'
+
+services:
+  mosquitto:
+    build: .
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "8883:8883"
+      - "443:443"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./conf.d:/mosquitto/config/conf.d
+      - ./certs:/mosquitto/certs
+      - ./data:/mosquitto/data
+      - ./passwd:/mosquitto/config/passwd
+      - ./baseACL:/mosquitto/baseACL
+      - ./dynamic_acl:/mosquitto/dynamic_acl
+      - ./merged_acl.txt:/mosquitto/config/merged_acl.txt
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    restart: unless-stopped
+    networks:
+      app_net:
+        aliases:
+          - mosquitto
+  redis:
+    image: redis:alpine
+    container_name: redis
+    networks:
+      app_net:
+        aliases:
+          - redis
+  watchdog:
+    build: ./watchdog
+    depends_on:
+      - mosquitto
+      - redis
+    volumes:
+      - ./dynamic_acl:/dynamic_acl
+      - ./certs:/certs
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    driver: bridge
