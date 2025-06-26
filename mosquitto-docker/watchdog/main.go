@@ -107,8 +107,9 @@ func restoreAllUsers() {
 
             rule := fmt.Sprintf(`user %s
             topic write users/%s/notes
-            topic write users/%s/settings
-            `, uid, uid, uid)
+            topic read users/%s/notes
+            topic read users/%s/settings
+            `, uid, uid, uid, uid)
 
             if err := os.WriteFile(path, []byte(rule), 0644); err != nil {
                 log.Printf("Failed to restore %s: %v", name, err)
@@ -155,8 +156,9 @@ func blockUser(uid string) {
     aclFile := fmt.Sprintf("/dynamic_acl/user_%s.acl", uid)
     rule := fmt.Sprintf(`user %s
     topic deny write users/%s/notes
-    topic deny write users/%s/settings
-    `, uid, uid, uid)
+    topic read users/%s/notes
+    topic read users/%s/settings
+    `, uid, uid, uid, uid)
 
     // Write block rule to dedicated file
     err := os.WriteFile(aclFile, []byte(rule), 0644)
@@ -174,10 +176,16 @@ func blockUser(uid string) {
     go func() {
         time.Sleep(10 * time.Minute)
 
+        if _, err := os.Stat(aclFile); os.IsNotExist(err) {
+            log.Printf("⚠️ ACL file for user %s no longer exists, skipping unblock", uid)
+            return
+        }
+
         rule := fmt.Sprintf(`user %s
         topic write users/%s/notes
-        topic write users/%s/settings
-        `, uid, uid, uid)
+        topic read users/%s/notes
+        topic read users/%s/settings
+        `, uid, uid, uid, uid)
 
         if err := os.WriteFile(aclFile, []byte(rule), 0644); err != nil {
             panic(err.Error())

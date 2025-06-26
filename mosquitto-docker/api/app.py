@@ -43,7 +43,8 @@ def onboard_user():
         with open(acl_file_path, "w") as f:
             f.write(f"""user {cn}
             topic write users/{cn}/notes
-            topic write users/{cn}/settings
+            topic read users/{cn}/notes
+            topic read users/{cn}/settings
             """)
 
         # Secure the file
@@ -65,6 +66,10 @@ def add_device():
     cn = data.get("cn")
     if not cn:
         return jsonify({"error": "Missing CN"}), 400
+    
+    acl_file_path = os.path.join(DYNAMIC_DIR, f"user_{cn}.acl")
+    if not os.path.exists(acl_file_path):
+        return jsonify({"error": "User CN does not exist"}), 400
 
     timestamp = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
     base = os.path.join(CERT_DIR, f"{cn}_{timestamp}")
@@ -108,6 +113,70 @@ def add_device():
 
     except subprocess.CalledProcessError as e:
         return jsonify({"error": f"OpenSSL error: {e}"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/delete_user', methods=['POST'])
+def delete_user():
+    data = request.get_json()
+    cn = data.get("cn")
+    if not cn:
+        return jsonify({"error": "Missing CN"}), 400
+
+    try:
+        # Delete all matching .acl files for this CN
+        deleted = []
+        for fname in os.listdir(DYNAMIC_DIR):
+            if fname.startswith(f"user_{cn}") and fname.endswith(".acl"):
+                full_path = os.path.join(DYNAMIC_DIR, fname)
+                os.remove(full_path)
+                deleted.append(fname)
+
+        if not deleted:
+            return jsonify({"error": f"No ACL file found for CN={cn}"}), 404
+
+        # Trigger reload
+        reload_response = reload_mosquitto()
+        if reload_response[1] != 200:
+            return jsonify({"error": "ACL file removed, but reload failed"}), 500
+
+        return jsonify({"status": f"Revoked device(s) for CN={cn}", "files_removed": deleted}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/revoke_device', methods=['POST'])
+def revoke_device():
+    data = request.get_json()
+    cert_pem = data.get("cert")
+    if not cert_pem:
+        return jsonify({"error": "Missing device certificate"}), 400
+
+    try:
+        # Save incoming cert to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".crt") as temp_cert:
+            temp_cert.write(cert_pem.encode("utf-8"))
+            cert_path = temp_cert.name
+
+        # Revoke the cert
+        cmd_revoke = ["openssl", "ca", "-config", "/mosquitto/certs/openssl.cnf", "-revoke", cert_path]
+        result = subprocess.run(cmd_revoke, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode != 0:
+            return jsonify({"error": "Failed to revoke cert", "details": result.stderr.decode()}), 500
+
+        # Regenerate CRL
+        cmd_crl = ["openssl", "ca", "-gencrl", "-out", "/mosquitto/certs/ca-crl.pem", "-config", "/mosquitto/certs/openssl.cnf"]
+        result = subprocess.run(cmd_crl, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode != 0:
+            return jsonify({"error": "Failed to generate CRL", "details": result.stderr.decode()}), 500
+
+        # Reload Mosquitto
+        reload_response = reload_mosquitto()
+        if reload_response[1] != 200:
+            return jsonify({"error": "Cert revoked but Mosquitto reload failed"}), 500
+
+        return jsonify({"status": "Device cert revoked"}), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

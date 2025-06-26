@@ -8,33 +8,32 @@ import (
     "log"
     "os"
     "time"
+    _ "embed"
 
     mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 func main() {
+    //go:embed ./tmp/lambda_output/cert.pem
+    var certPem []byte
+
+    //go:embed ./tmp/lambda_output/key.pem
+    var keyPem []byte
+
+    //go:embed ./tmp/lambda_output/ca.crt
+    var caPem []byte
+
     // Command-line flags
     broker := flag.String("broker", "tls://localhost:8883", "MQTT broker URI (e.g. tls://host:8884)")
-    certfile := flag.String("cert", "", "Client certificate file path")
-    keyfile := flag.String("key", "", "Client private key file path")
-    cafile := flag.String("cafile", "", "Server public file path")
     flag.Parse()
 
     // Load CA certificate
     pool := x509.NewCertPool()
-    caPem, err := os.ReadFile(*cafile)
-    if err != nil {
-        log.Fatalf("Failed to read CA file: %v", err)
-    }
     if ok := pool.AppendCertsFromPEM(caPem); !ok {
         log.Fatalf("Failed to append CA certs")
     }
 
-    // Load client certificate and key
-    if *certfile == "" || *keyfile == "" {
-        log.Fatalf("Client cert and key must be provided via --cert and --key")
-    }
-    cert, err := tls.LoadX509KeyPair(*certfile, *keyfile)
+    cert, err := tls.X509KeyPair(certPem, keyPem)
     if err != nil {
         log.Fatalf("Failed to load client certificate/key: %v", err)
     }
@@ -65,10 +64,6 @@ func main() {
     opts.SetConnectRetry(true)
     opts.SetConnectRetryInterval(5 * time.Second)
     opts.SetMaxReconnectInterval(30 * time.Second)
-
-    // opts.OnReconnecting = func(c mqtt.Client, err error) {
-    //     fmt.Printf("Reconnecting due to: %v\n", err)
-    // }
 
     // Subscribe on connect using dynamically derived topic
     opts.OnConnect = func(c mqtt.Client) {
