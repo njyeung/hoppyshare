@@ -3,10 +3,18 @@ from router import route_action
 
 def handler(event, context):
     try:
-        body = json.loads(event['body'])
-        return route_action(body)
+        body = json.loads(event.get('body', '{}'))
+        res = route_action(body)
+        return {
+            "statusCode": res.get("status_code", 500),
+            "body": json.dumps(res.get("json", {}))
+        }
+        
     except Exception as e:
-        return {"statusCode": 500, "body": f"Internal error: {str(e)}"}
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"error": f"Internal error: {str(e)}"})
+        }
 
 if __name__ == "__main__":
     with open("event.json") as f:

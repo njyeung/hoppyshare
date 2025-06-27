@@ -2,14 +2,17 @@ import requests
 import os
 import subprocess
 import json
-from build_binary import build_binary
-import base64
+import paho.mqtt.client as mqtt
+import ssl
+import time
+from utils import api_response
 
 MOSQUITTO_API = "https://localhost"
 CERT = "./certs/lambda.crt"
 KEY = "./certs/lambda.key"
 CA = "./certs/ca.crt"
 
+@api_response
 def onboard_user(uid):
     return requests.post(
         f"{MOSQUITTO_API}/onboard_user",
@@ -18,31 +21,16 @@ def onboard_user(uid):
         verify=CA
     )
 
+@api_response
 def add_device(uid):
-    response = requests.post(
+    return requests.post(
         f"{MOSQUITTO_API}/add_device",
         json={"cn": uid},
         cert=(CERT, KEY),
         verify=CA
     )
 
-    if response.status_code != 200:
-        return {"error": f"Failed to add device: {response.text}"}
-
-    cert = response.json().get("cert")
-    key = response.json().get("key")
-
-    binary = build_binary(cert, key)
-
-    if binary is None:
-        return {"error": "Failed to build device binary"}
-
-    encoded = base64.b64encode(binary).decode("utf-8")
-
-    return {
-        "binary": encoded
-    }
-
+@api_response
 def revoke_device(cert_pem):
     return requests.post(
         f"{MOSQUITTO_API}/revoke_device",
@@ -50,3 +38,39 @@ def revoke_device(cert_pem):
         cert=(CERT, KEY),
         verify=CA
     )
+
+@api_response
+def pub_settings(settings: dict, uid: str):
+    topic = f"users/{uid}/settings"
+    payload = json.dumps(settings)
+
+    client = mqtt.Client()
+
+    try:
+        client.tls_set(
+            ca_certs=CA,
+            certfile=CERT,
+            keyfile=KEY,
+            tls_version=ssl.PROTOCOL_TLS_CLIENT,
+        )
+        client.connect("localhost", 8883)
+        client.loop_start()
+
+        # Retain message
+        result = client.publish(topic, payload, retain=True)
+        result.wait_for_publish()
+
+        client.loop_stop()
+        client.disconnect()
+
+        return {
+            "status_code": 200,
+            "json": {"message": "Published", "topic": topic, "payload": settings}
+        }
+
+    except Exception as e:
+        return {
+            "status_code": 500,
+            "json": {"error": str(e)}
+        }
+
