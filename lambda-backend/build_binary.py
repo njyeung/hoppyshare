@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-def build_binary(cert, key):
+def build_binary(device_id, cert, key):
     os.makedirs("./tmp/lambda_output", exist_ok=True)
 
     with open("./tmp/lambda_output/cert.pem", "w") as f:

@@ -1,7 +1,30 @@
-# utils.py
-
 import requests
 from functools import wraps
+from jose import jwt, JWTError
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET")
+
+def get_uid_from_auth_header(headers):
+    auth_header = headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise Exception("Missing or malformed Authorization header")
+
+    token = auth_header[len("Bearer "):]
+    try:
+        payload = jwt.decode(
+            token, 
+            SUPABASE_JWT_SECRET, 
+            algorithms=["HS256"], 
+            audience="authenticated")
+        
+        return payload["sub"]
+
+    except JWTError as e:
+        raise Exception(f"JWT verification failed: {e}")
 
 def wrap_response(response: requests.Response):
     try:
@@ -36,4 +59,12 @@ def success_response(data):
     return {
         "status_code": 200,
         "json": data
+    }
+
+def forbidden_response(message):
+    return {
+        "status_code": 403,
+        "json": {
+            "error": message,
+        }
     }

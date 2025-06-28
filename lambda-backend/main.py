@@ -3,13 +3,14 @@ from router import route_action
 
 def handler(event, context):
     try:
+        headers = event.get("headers", {})
         body = json.loads(event.get('body', '{}'))
-        res = route_action(body)
+        res = route_action(headers, body)
         return {
             "statusCode": res.get("status_code", 500),
             "body": json.dumps(res.get("json", {}))
         }
-        
+
     except Exception as e:
         return {
             "statusCode": 500,
