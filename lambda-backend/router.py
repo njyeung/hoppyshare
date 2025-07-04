@@ -1,96 +1,55 @@
-from mosquitto_api import onboard_user, add_device, revoke_device, pub_settings
 from utils import success_response, error_response, get_uid_from_auth_header, forbidden_response
-from build_binary import build_binary
-import base64
-from supabase import create_client, Client
-import uuid
-import json
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+from config import SUPABASE_SERVICE_SECRET
+from actions.onboard_user import onboard_user
+from actions.add_device import add_device
+from actions.get_devices import get_devices
+from actions.revoke_device import revoke_device
+from actions.change_settings import change_settings
 
 def route_action(headers, body):
-    uid = get_uid_from_auth_header(headers)
     action = body.get("action")
+    
+    # Route for supabase webhook
+    match action:
+        case "onboard_user":
+            auth_header = headers.get("Authorization")
+            if auth_header != f"Bearer {['SUPABASE_SERVICE_SECRET']}":
+                return forbidden_response("Invalid service token")
+            
+            uid = body.get("uid")
+            if not uid:
+                return error_response("Missing uid")
 
-    if action == "onboard_user":
-        return onboard_user(uid)
+            return onboard_user(uid)
 
-    elif action == "add_device":
-        if not uid:
-            return forbidden_response("Not authorized")
 
-        # Add device to mosquitto
-        res = add_device(uid)
-        if res["status_code"] != 200:
-            return error_response("Failed to add device", res)
-        cert = res["json"].get("cert")
-        key = res["json"].get("key")
-        if not cert or not key:
-            return error_response("Cert or key missing in response")
+    # Protected routes (using supabase jwt)
+    try:
+        uid = get_uid_from_auth_header(headers)
+    except Exception as e:
+        return forbidden_response(str(e))
 
-        # Add device to DB
-        device_id = str(uuid.uuid4())
-        data = {
-            "deviceid": device_id,
-            "uid": uid,
-            "settings": {"copy": True}, 
-            "cert": cert
-        }
+    match action:
+        case "add_device":
+            return add_device(uid)
+        case "get_devices":
+            return get_devices(uid)
+        case "revoke_device":
+            cert = body.get("cert")
+            
+            if not cert:
+                return error_response("Cert field required")
 
-        try:
-            insert_res = supabase.table("device").insert(data).execute()
-        except Exception as e:
-            return error_response("Failed to insert device into database", str(e))
+            return revoke_device(uid, cert)
+        case "change_settings":
+            device_id = body.get("device_id")
+            new_settings = body.get("new_settings")
+             
+            if not device_id:
+                return error_response("device_id field requried")
+            if not new_settings:
+                return error_response("new_settings field required")
 
-        # Build binary and return it
-        binary = build_binary(device_id, cert, key)
-        if binary is None:
-            return error_response("Failed to build device binary")
-
-        encoded = base64.b64encode(binary).decode("utf-8")
-        return success_response({"binary": encoded})
-
-    elif action == "get_devices":
-        if not uid:
-            return forbidden_response("Not authorized")
-
-        try:
-            query = (
-                supabase.table("device")
-                .select("deviceid, settings")
-                .eq("uid", uid)
-                .execute()
-            )
-            devices = query.data
-            return success_response({"devices": devices})
-
-        except Exception as e:
-            return error_response("Failed to query devices", str(e))
-
-    elif action == "revoke_device":
-        if not uid:
-            return forbidden_response("Not authorized")
-        cert = body.get("cert")
-        if not cert:
-            return error_response("Missing cert")
-        return revoke_device(cert)
-
-    elif action == "change_settings":
-        if not uid:
-            return forbidden_response("Not authorized")
-
-        device_id = body.get("device_id")
-        new_settings = body.get("new_settings")
-
-        res = pub_settings({"copy": True}, "user1")
-        return res
-
-    else:
-        return error_response(f"Unknown action '{action}'")
+            return change_settings(uid, device_id, new_settings)
+    
+    return error_response("Unknown action")
