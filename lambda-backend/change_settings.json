@@ -1,6 +1,0 @@
-{
-  "headers": {
-    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6Ilp4cUxVaERpNXFNREtCazkiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3F0bGFkYWd0dGFpemZ4ZHRra2plLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI2OTlmODExNS1hNjdmLTQ2MzMtYjIyMS0xZTRlNGRiMzczM2IiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzUxNjc5NDUxLCJpYXQiOjE3NTE2NzU4NTEsImVtYWlsIjoibmlja2p5ZXVuZ0BnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc1MTY3NTg1MX1dLCJzZXNzaW9uX2lkIjoiZDY2OTY3YTUtMWVkOC00OGIzLWJmYzUtMWEwY2JiNjUwYWUyIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.ALZeFYpZlroiqjN1UC9gAwocL0BPiMyZoFREQqwtT6o"
-  },
-  "body": "{\"action\": \"change_settings\", \"device_id\": \"cd9ad1bd-56de-43ec-b6d0-ed445091b5ef\", \"new_settings\": {\"copy\": true, \"paste\": false}}"
-}
