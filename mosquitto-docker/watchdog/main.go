@@ -103,7 +103,7 @@ func restoreAllUsers() {
 
         if strings.Contains(string(content), "deny write") {
             uid := strings.TrimSuffix(strings.TrimPrefix(name, "user_"), ".acl")
-            log.Printf("🔁 Restoring write access for %s", uid)
+            log.Printf("Restoring write access for %s", uid)
 
             rule := fmt.Sprintf(`user %s
             topic write users/%s/notes

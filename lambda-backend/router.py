@@ -5,22 +5,28 @@ from actions.add_device import add_device
 from actions.get_devices import get_devices
 from actions.revoke_device import revoke_device
 from actions.change_settings import change_settings
+from actions.delete_user import delete_user
+import json
 
-def route_action(headers, body):
-    action = body.get("action")
-    
+def route_action(event):
+    method = event["httpMethod"]
+    path = event["resource"]
+    headers = event.get("headers", {})
+    body = json.loads(event["body"]) if event.get("body") else {}
+    pathParameters = event.get("pathParameters", {})
+
     # Route for supabase webhook
-    match action:
-        case "onboard_user":
-            auth_header = headers.get("Authorization")
-            if auth_header != f"Bearer {['SUPABASE_SERVICE_SECRET']}":
-                return forbidden_response("Invalid service token")
+    # match action:
+    #     case "onboard_user":
+    #         auth_header = headers.get("Authorization")
+    #         if auth_header != f"Bearer {['SUPABASE_SERVICE_SECRET']}":
+    #             return forbidden_response("Invalid service token")
             
-            uid = body.get("uid")
-            if not uid:
-                return error_response("Missing uid")
+    #         uid = body.get("uid")
+    #         if not uid:
+    #             return error_response("Missing uid")
 
-            return onboard_user(uid)
+    #         return onboard_user(uid)
 
 
     # Protected routes (using supabase jwt)
@@ -29,21 +35,23 @@ def route_action(headers, body):
     except Exception as e:
         return forbidden_response(str(e))
 
-    match action:
-        case "add_device":
+    match (method, path):
+        case ("POST", "/api/onboard_user"):
+            return onboard_user(uid)
+        case ("POST" ,"/api/devices"):
             return add_device(uid)
-        case "get_devices":
+        case ("GET", "/api/devices"):
             return get_devices(uid)
-        case "revoke_device":
-            cert = body.get("cert")
+        case ("DELETE", "/api/devices/{device_id}"):
+            device_id = pathParameters.get("device_id", None)
             
-            if not cert:
-                return error_response("Cert field required")
+            if not device_id:
+                return error_response("device_id field required")
 
-            return revoke_device(uid, cert)
-        case "change_settings":
-            device_id = body.get("device_id")
-            new_settings = body.get("new_settings")
+            return revoke_device(uid, device_id)
+        case ("PUT", "/api/settings/{device_id}"):
+            device_id = pathParameters.get("device_id", None)
+            new_settings = body.get("new_settings", None)
              
             if not device_id:
                 return error_response("device_id field requried")
@@ -51,5 +59,9 @@ def route_action(headers, body):
                 return error_response("new_settings field required")
 
             return change_settings(uid, device_id, new_settings)
-    
-    return error_response("Unknown action")
+        case ("DELETE", "/api/user"):
+
+            return delete_user(uid)
+    print(method)
+    print(path)
+    return error_response("Unknown endpoint")

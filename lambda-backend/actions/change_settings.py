@@ -1,6 +1,7 @@
 from mosquitto_api import pub_settings
 from config import supabase 
-
+from actions.get_devices import get_devices
+from utils import error_response, forbidden_response
 def change_settings(uid, device_id, new_settings):
 
     # Make sure user owns this device
@@ -15,8 +16,24 @@ def change_settings(uid, device_id, new_settings):
 
         if not any(d["deviceid"] == device_id for d in devices):
             return forbidden_response("Device does not belong to user")
+
     except Exception as e:
         return error_response("Failed to query devices", str(e))
+
+    # Change settings in database
+    update_res = ( supabase.table("device")
+        .update({"settings": new_settings})
+        .eq("deviceid", device_id)
+        .execute()
+    )
+
+    # Publish new settings
+    query = get_devices(uid)
+    
+    if query.get("status_code") != 200:
+        return error_response("Failed to change settings")
+
+    settings = query.get("json", {}).get("devices", [])
 
     res = pub_settings(new_settings, uid)
 

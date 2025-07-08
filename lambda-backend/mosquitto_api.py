@@ -22,6 +22,14 @@ def onboard_user(uid):
     )
 
 @api_response
+def delete_user(uid):
+    return requests.post(
+        f"{MOSQUITTO_API}/delete_user",
+        json={"cn", uid},
+        cert={CERT, KEY},
+        verify=CA
+    )
+@api_response
 def add_device(uid):
     return requests.post(
         f"{MOSQUITTO_API}/add_device",

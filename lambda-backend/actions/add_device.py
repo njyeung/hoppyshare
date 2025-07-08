@@ -32,7 +32,6 @@ def add_device(uid):
         insert_res = supabase.table("device").insert(data).execute()
     except Exception as e:
         return error_response("Failed to insert device into database")
-
     
     # Fetch existing settings
     query = get_devices(uid)
@@ -44,6 +43,8 @@ def add_device(uid):
 
     # Set up settings
     res = pub_settings(settings, uid)
+
+    print(res)
 
     if res.get("status_code")!= 200:
         return error_response("Failed to set up device settings")

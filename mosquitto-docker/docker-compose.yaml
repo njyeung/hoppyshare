@@ -13,7 +13,6 @@ services:
       - ./conf.d:/mosquitto/config/conf.d
       - ./certs:/mosquitto/certs
       - ./data:/mosquitto/data
-      - ./passwd:/mosquitto/config/passwd
       - ./baseACL:/mosquitto/baseACL
       - ./dynamic_acl:/mosquitto/dynamic_acl
       - ./merged_acl.txt:/mosquitto/config/merged_acl.txt
