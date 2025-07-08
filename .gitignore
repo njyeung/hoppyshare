@@ -1,5 +1,5 @@
 # testing
-*event.json
+*.json
 
 # Certificate and key files
 *.crt
