@@ -11,6 +11,7 @@ import json
 def add_device(uid):
     # Add device to mosquitto
     res = mosquitto_api.add_device(uid)
+    
     if res["status_code"] != 200:
         return error_response("Failed to add device", res)
     cert = res["json"].get("cert")
@@ -50,7 +51,7 @@ def add_device(uid):
         return error_response("Failed to set up device settings")
 
     # Build binary and return it
-    binary = build_binary(device_id, cert, key)
+    binary = build_binary("linux", device_id, cert, key)
     if binary is None:
         return error_response("Failed to build device binary")
 

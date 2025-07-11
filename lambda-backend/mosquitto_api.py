@@ -7,10 +7,18 @@ import ssl
 import time
 from utils import api_response
 
-MOSQUITTO_API = "https://localhost"
+MOSQUITTO_API = "https://18.188.110.246"
 CERT = "./certs/lambda.crt"
 KEY = "./certs/lambda.key"
 CA = "./certs/ca.crt"
+
+@api_response
+def reload_mosquitto():
+    return requests.post(
+        f"{MOSQUITTO_API}/reload",
+        cert=(CERT, KEY),
+        verify=CA
+    )
 
 @api_response
 def onboard_user(uid):
@@ -26,9 +34,10 @@ def delete_user(uid):
     return requests.post(
         f"{MOSQUITTO_API}/delete_user",
         json={"cn", uid},
-        cert={CERT, KEY},
+        cert=(CERT, KEY),
         verify=CA
     )
+
 @api_response
 def add_device(uid):
     return requests.post(
@@ -61,7 +70,8 @@ def pub_settings(settings: dict, uid: str):
             keyfile=KEY,
             tls_version=ssl.PROTOCOL_TLS_CLIENT,
         )
-        client.connect("localhost", 8883)
+
+        client.connect("18.188.110.246", 8883)
         client.loop_start()
 
         # Retain message
