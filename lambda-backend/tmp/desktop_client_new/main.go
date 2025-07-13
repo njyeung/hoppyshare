@@ -56,7 +56,7 @@ var loading3IconWindows []byte
 //go:embed assets/windows/loading4.ico
 var loading4IconWindows []byte
 
-const MESSAGE_CACHE_DURATION = 1200
+const MESSAGE_CACHE_DURATION = 120
 
 var (
 	loading   bool
