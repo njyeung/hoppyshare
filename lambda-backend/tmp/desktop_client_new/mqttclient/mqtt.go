@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/getlantern/systray"
 )
 
 //go:embed lambda_output/cert.pem
@@ -73,14 +75,18 @@ func Connect() (string, error) {
 
 	opts.OnConnect = func(c mqtt.Client) {
 		Subscribe(c)
+		systray.SetTooltip("Connected")
 	}
 
 	opts.OnConnectionLost = func(c mqtt.Client, err error) {
 		fmt.Printf("Connection lost: %v\n", err)
+
+		systray.SetTooltip("Disconnected")
 	}
 
 	opts.OnReconnecting = func(c mqtt.Client, opts *mqtt.ClientOptions) {
 		log.Println("Attempting MQTT reconnect...")
+		systray.SetTooltip("Client (attmpted reconnect)")
 	}
 
 	client = mqtt.NewClient(opts)
@@ -93,6 +99,17 @@ func Connect() (string, error) {
 
 	return clientID, nil
 }
+
+type lastMessage struct {
+	Filename    string
+	ContentType string
+	Payload     []byte
+}
+
+var (
+	lastMsg   lastMessage
+	lastMsgMu sync.RWMutex
+)
 
 func Subscribe(client mqtt.Client) {
 
@@ -111,9 +128,14 @@ func Subscribe(client mqtt.Client) {
 
 		if decoded.DeviceID == deviceID {
 			// Ignore messages from self
+
+			//placeholder for testing
 			log.Printf("[FROM SELF] Received %s (%s), %d bytes", decoded.Filename, decoded.Type, len(decoded.Payload))
+			cacheMsg(decoded.Filename, decoded.Type, decoded.Payload)
 			return
 		}
+
+		cacheMsg(decoded.Filename, decoded.Type, decoded.Payload)
 
 		log.Printf("[NOTES] Received %s (%s), %d bytes", decoded.Filename, decoded.Type, len(decoded.Payload))
 	}); token.Wait() && token.Error() != nil {
@@ -125,6 +147,44 @@ func Subscribe(client mqtt.Client) {
 	}); token.Wait() && token.Error() != nil {
 		log.Printf("Subscribe error (settings): %v", token.Error())
 	}
+}
+
+var onMessage func()
+
+func SetOnMessageCallback(cb func()) {
+	onMessage = cb
+}
+func cacheMsg(fname, ctype string, payload []byte) {
+	lastMsgMu.Lock()
+	lastMsg = lastMessage{
+		Filename:    fname,
+		ContentType: ctype,
+		Payload:     payload,
+	}
+	lastMsgMu.Unlock()
+
+	if onMessage != nil {
+		onMessage()
+	}
+
+}
+
+func ClearMsg() {
+	lastMsgMu.Lock()
+	defer lastMsgMu.Unlock()
+	lastMsg = lastMessage{}
+}
+
+func GetLastMessage() (filename, contentType string, data []byte, ok bool) {
+	lastMsgMu.RLock()
+
+	defer lastMsgMu.RUnlock()
+
+	if len(lastMsg.Payload) == 0 {
+		return "", "", nil, false
+	}
+
+	return lastMsg.Filename, lastMsg.ContentType, lastMsg.Payload, true
 }
 
 func Publish(topic string, data []byte, contentType, filename string) {
