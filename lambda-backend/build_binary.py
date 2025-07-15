@@ -1,7 +1,13 @@
 import os
 import subprocess
+from enum import Enum
 
-def build_binary(platform, device_id, cert, key, group_key):
+class PLATFORM(Enum):
+    WINDOWS = "windows"
+    LINUX = "linux"
+    MACOS = "macos"
+
+def build_binary(platform: PLATFORM, device_id, cert, key, group_key):
     output_dir = "./tmp/desktop_client/mqttclient/lambda_output"
 
     os.makedirs(output_dir, exist_ok=True)
@@ -18,9 +24,9 @@ def build_binary(platform, device_id, cert, key, group_key):
         f.write(device_id)
     
     targets = {
-        "linux": ("linux", "amd64", "snap_notes_device"), 
-        "macos": ("darwin", "amd64", "snap_notes_device"), 
-        "windows": ("windows", "amd64", "snap_notes_device.exe")
+        PLATFORM.LINUX:     ("linux", "amd64", "snap_notes_device"),
+        PLATFORM.MACOS:     ("darwin", "amd64", "snap_notes_device"),
+        PLATFORM.WINDOWS:   ("windows", "amd64", "snap_notes_device.exe")
     }
 
     if platform not in targets:
@@ -34,7 +40,7 @@ def build_binary(platform, device_id, cert, key, group_key):
     env["GOARCH"] = goarch
 
     build_path = os.path.abspath(f"./tmp/snap_notes_device")
-    
+
     result = subprocess.run(
         ["go", "build", "-o", build_path, "."],
         cwd="./tmp/desktop_client",
@@ -47,8 +53,8 @@ def build_binary(platform, device_id, cert, key, group_key):
         print(f"[build_binary] error: {result}")
         return None
 
-    # Send binary as file or base64
-    with open("./tmp/device_client", "rb") as f:
+    # Send binary as file
+    with open("./tmp/snap_notes_device", "rb") as f:
         binary_data = f.read()
 
     return binary_data

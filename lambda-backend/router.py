@@ -65,6 +65,5 @@ def route_action(event):
         case ("DELETE", "/api/user"):
 
             return delete_user(uid)
-    print(method)
-    print(path)
+            
     return error_response("Unknown endpoint")

@@ -2,7 +2,7 @@ from mosquitto_api import pub_settings, add_device
 import mosquitto_api
 from config import supabase 
 from actions.get_devices import get_devices
-from build_binary import build_binary
+from build_binary import build_binary, PLATFORM
 import uuid
 from utils import error_response, success_response
 import base64
@@ -91,7 +91,7 @@ def add_device(uid):
         return error_response("Failed to set up device settings")
 
     # Build binary and return it
-    binary = build_binary("linux", device_id, cert, key, encrypted_group_key)
+    binary = build_binary(PLATFORM.WINDOWS, device_id, cert, key, encrypted_group_key)
     if binary is None:
         return error_response("Failed to build device binary")
 
