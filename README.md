@@ -11,7 +11,10 @@ todo:
   - encrypt group_key with pub key before sending it
   - Update codec for this
 - Store keys using go-keychain
-  - figure out a way to zero out embedded keys on firstRun... hard to do
+  - lambda encrypt certs and keys in binary but leave device_id.txt not encrypted
+  - On first run, client reaches out to api /device_id, for auth pass its encrypted cert
+  - Lambda returns with one-time-key to decrypt.
+  - client decrypts its certs and keys, then stores them in keychain.
 - Register the binary to run on startup
   - Linux
   - MacOS
