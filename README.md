@@ -9,6 +9,7 @@ todo:
   - create supabase table to store a group_key per user
   - create group_key when onboard 
   - encrypt group_key with pub key before sending it
+  - Update codec for this
 - Store keys using go-keychain
   - figure out a way to zero out embedded keys on firstRun... hard to do
 - Register the binary to run on startup
