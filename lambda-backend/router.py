@@ -39,7 +39,7 @@ def route_action(event):
     match (method, path):
         case("POST", "/api/reload"):
             return reload_mosquitto()
-        case ("POST", "/api/onboard_user"):
+        case ("POST", "/api/onboard"):
             return onboard_user(uid)
         case ("POST" ,"/api/devices"):
             return add_device(uid)

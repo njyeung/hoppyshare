@@ -9,6 +9,8 @@
 *.csr
 *.srl
 *device_id.txt
+*.enc
+
 # Certificate authority files
 ca.crt
 ca.key

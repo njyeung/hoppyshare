@@ -1,16 +1,20 @@
 import os
 import subprocess
 
-def build_binary(platform, device_id, cert, key):
-    os.makedirs("./tmp/lambda_output", exist_ok=True)
+def build_binary(platform, device_id, cert, key, group_key):
+    output_dir = "./tmp/desktop_client/mqttclient/lambda_output"
 
-    with open("./tmp/lambda_output/cert.pem", "w") as f:
+    os.makedirs(output_dir, exist_ok=True)
+
+    with open(f"{output_dir}/cert.pem", "w") as f:
         f.write(cert)
-    with open("./tmp/lambda_output/key.pem", "w") as f:
+    with open(f"{output_dir}/key.pem", "w") as f:
         f.write(key)
-    with open("./tmp/lambda_output/ca.crt", "w") as f:
+    with open(f"{output_dir}/ca.crt", "w") as f:
         f.write(open("./certs/ca.crt").read())
-    with open("./tmp/lambda_output/device_id.txt", "w") as f:
+    with open(f"{output_dir}/group_key.enc", "wb") as f:
+        f.write(group_key)
+    with open(f"{output_dir}/device_id.txt", "w") as f:
         f.write(device_id)
     
     targets = {
@@ -29,9 +33,11 @@ def build_binary(platform, device_id, cert, key):
     env["GOOS"] = goos
     env["GOARCH"] = goarch
 
+    build_path = os.path.abspath(f"./tmp/snap_notes_device")
+    
     result = subprocess.run(
-        ["go", "build", "-o", f"./{output_name}", "./client.go"],
-        cwd="./tmp",
+        ["go", "build", "-o", build_path, "."],
+        cwd="./tmp/desktop_client",
         capture_output=True,
         text=True,
         env=env
