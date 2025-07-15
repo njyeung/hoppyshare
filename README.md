@@ -2,7 +2,7 @@
 todo:
 - icons
 - webpage
-- mobile apps
+- mobile apps, store keys in the key store
   - iphone
   - android
 - e2ee
