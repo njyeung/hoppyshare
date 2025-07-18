@@ -5,11 +5,8 @@ todo:
 - mobile apps, store keys in the key store
   - iphone
   - android
-- e2ee
-  - create supabase table to store a group_key per user
-  - create group_key when onboard 
-  - encrypt group_key with pub key before sending it
-  - Update codec for this
+- e2ee DONE
+- Device settings integration
 - Store keys using go-keychain
   - lambda encrypt certs and keys in binary but leave device_id.txt not encrypted
   - On first run, client reaches out to api /device_id, for auth pass its encrypted public cert
