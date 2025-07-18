@@ -1,6 +1,9 @@
 # testing
 *.json
 *snap_notes_device
+*device_linux
+*device_windows
+*device_darwin
 
 # Certificate and key files
 *.crt

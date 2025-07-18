@@ -1,8 +1,11 @@
 package main
 
 import (
-	"bytes"
+	"desktop_client/clipboard"
+	"desktop_client/config"
 	"desktop_client/mqttclient"
+	"desktop_client/playsound"
+	"desktop_client/systrayhelpers"
 	"desktop_client/wakewatcher"
 	_ "embed"
 	"fmt"
@@ -14,13 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/atotto/clipboard"
 	"github.com/getlantern/systray"
 	"github.com/sqweek/dialog"
-
-	"github.com/faiface/beep"
-	"github.com/faiface/beep/speaker"
-	"github.com/faiface/beep/wav"
 )
 
 var clientID string
@@ -65,8 +63,6 @@ var loading4IconWindows []byte
 //go:embed assets/notification.wav
 var notificationSound []byte
 
-
-
 const MESSAGE_CACHE_DURATION = 120
 
 var (
@@ -82,15 +78,29 @@ var (
 	mCopyToClipboard *systray.MenuItem
 )
 
+var iconUpdateCh = make(chan struct{}, 1)
+
+func requestIconUpdate() {
+	select {
+	case iconUpdateCh <- struct{}{}:
+	default:
+
+	}
+}
+
 func main() {
+	if err := config.LoadEmbeddedConfig(); err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
 	clientID, err = mqttclient.Connect()
 	if err != nil {
 		log.Printf("Full error with mqtt: %v", err)
 	}
 
 	mqttclient.SetOnMessageCallback(HandleNewNotification)
+
 	wakewatcher.SetCallback(func() {
-		log.Println("[WAKE] Detected wake from sleep, restarting MQTT client...")
 		mqttclient.Disconnect()
 		clientID, err = mqttclient.Connect()
 		if err != nil {
@@ -99,7 +109,6 @@ func main() {
 	})
 
 	systray.Run(onReady, onExit)
-
 }
 
 func onReady() {
@@ -118,9 +127,9 @@ func onReady() {
 		spinnerIcons = [][]byte{loading1IconMacOS, loading2IconMacOS, loading3IconMacOS, loading4IconMacOS}
 	}
 
-	systray.SetIcon(iconDefault)
-	systray.SetTitle("")
-	systray.SetTooltip("Disconnected")
+	systrayhelpers.SetIcon(iconDefault)
+	systrayhelpers.SetTitle("")
+	systrayhelpers.SetTooltip("Disconnected")
 	mSendClipboard := systray.AddMenuItem("Send Clipboard", "Send clipboard contents")
 	mSendFile := systray.AddMenuItem("Send File", "Send an file")
 	systray.AddSeparator()
@@ -134,52 +143,87 @@ func onReady() {
 
 	go func() {
 		for {
-			select {
-			case <-mSendClipboard.ClickedCh:
-				log.Println("Sending clipboard contents")
-				go PublishClipboard()
-			case <-mSendFile.ClickedCh:
-				log.Println("Sending file...")
-				go PublishFile()
-			case <-mDownloadRecent.ClickedCh:
-				log.Println("Downloading recent")
-				go DownloadRecent()
-			case <-mCopyToClipboard.ClickedCh:
-				log.Println("Copying to clipboard")
-				go CopyRecentToClipboard()
-			case <-mRestart.ClickedCh:
-				mqttclient.Disconnect()
-				clientID, err = mqttclient.Connect()
-			case <-mQuit.ClickedCh:
-				systray.Quit()
-				return
+			<-mSendClipboard.ClickedCh
+			go PublishClipboard()
+		}
+	}()
+	go func() {
+		for {
+			<-mSendFile.ClickedCh
+			go PublishFile()
+		}
+	}()
+	go func() {
+		for {
+			<-mDownloadRecent.ClickedCh
+			go DownloadRecent()
+		}
+	}()
+	go func() {
+		for {
+			<-mCopyToClipboard.ClickedCh
+			go CopyRecentToClipboard()
+		}
+	}()
+	go func() {
+		for {
+			<-mRestart.ClickedCh
+			var err error
+			clientID, err = mqttclient.Connect()
+			if err != nil {
+				log.Printf("Reconnect error: %v", err)
 			}
+		}
+	}()
+	go func() {
+		for {
+			<-mQuit.ClickedCh
+			systray.Quit()
+			return
 		}
 	}()
 
 	// icon logic
 	go func() {
 		spinnerIdx := 0
+		var ticker *time.Ticker
 
 		for {
-			time.Sleep(200 * time.Millisecond)
+			select {
+			case <-iconUpdateCh:
+				loadingMu.RLock()
+				isLoading := loading
+				loadingMu.RUnlock()
 
-			loadingMu.RLock()
-			isLoading := loading
-			loadingMu.RUnlock()
+				messageMu.RLock()
+				hasMessage := messageAvailable
+				messageMu.RUnlock()
 
-			messageMu.RLock()
-			hasMessage := messageAvailable
-			messageMu.RUnlock()
+				if isLoading {
+					if ticker == nil {
+						ticker = time.NewTicker(200 * time.Millisecond)
+					}
+				} else {
+					if ticker != nil {
+						ticker.Stop()
+						ticker = nil
+					}
 
-			if isLoading {
-				systray.SetIcon(spinnerIcons[spinnerIdx%len(spinnerIcons)])
+					if hasMessage {
+						systrayhelpers.SetIcon(iconNotify)
+					} else {
+						systrayhelpers.SetIcon(iconDefault)
+					}
+				}
+
+			case <-func() <-chan time.Time {
+				if ticker != nil {
+					return ticker.C
+				}
+				return make(chan time.Time)
+			}():
+				systrayhelpers.SetIcon(spinnerIcons[spinnerIdx%len(spinnerIcons)])
 				spinnerIdx++
-				continue
-			} else if hasMessage {
-				systray.SetIcon(iconNotify)
-			} else {
-				systray.SetIcon(iconDefault)
 			}
 		}
 	}()
@@ -207,58 +251,78 @@ func HandleNewNotification() {
 		mDownloadRecent.Disable()
 		mCopyToClipboard.Disable()
 
-		go mqttclient.ClearMsg()
+		mqttclient.ClearMsg()
+
+		messageMu.Lock()
+		messageAvailable = false
+		messageMu.Unlock()
+		requestIconUpdate()
 
 	})
 	notificationTimerMu.Unlock()
 
-	PlaySound()
-}
-
-func PlaySound() {
-	streamer, format, err := wav.Decode(bytes.NewReader(notificationSound))
-	if err != nil {
-		log.Fatal("Failed to decode notification sound:", err)
-	}
-	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
-		streamer.Close()
-	})))
+	playsound.Play(notificationSound)
 }
 
 func onExit() {
-	// Cleanup here if needed
+	// Cleanup
+}
+
+var defaultExtensions = map[string]string{
+	"text/plain":               ".txt",
+	"application/octet-stream": ".bin",
+}
+
+func ExtensionFromMime(mimeType string) string {
+	if ext, ok := defaultExtensions[mimeType]; ok {
+		return ext
+	}
+
+	exts, err := mime.ExtensionsByType(mimeType)
+	if err != nil || len(exts) == 0 {
+		return ".bin"
+	}
+	return exts[0]
 }
 
 func PublishClipboard() {
 	loadingMu.Lock()
 	loading = true
 	loadingMu.Unlock()
+	requestIconUpdate()
 
-	content, err := clipboard.ReadAll()
+	content, mimeType, err := clipboard.Read()
 
 	if err != nil {
 		log.Printf("Clipboard read error: %v", err)
 		loadingMu.Lock()
 		loading = false
 		loadingMu.Unlock()
+		requestIconUpdate()
 		return
 	}
 
+	ext := ExtensionFromMime(mimeType)
+
 	topic := fmt.Sprintf("users/%s/notes", clientID)
-	err = mqttclient.Publish(topic, []byte(content), "text/plain", "")
+	filename := fmt.Sprintf("clipboard%s", ext)
+	log.Println(filename)
+	err = mqttclient.Publish(topic, []byte(content), mimeType, filename)
 	if err != nil {
 		log.Println(err)
 	}
+
 	loadingMu.Lock()
 	loading = false
 	loadingMu.Unlock()
+	requestIconUpdate()
 }
 
 func PublishFile() {
 	loadingMu.Lock()
 	loading = true
 	loadingMu.Unlock()
+	requestIconUpdate()
 
 	filePath, err := dialog.File().Title("Select a File").Load()
 	if err != nil {
@@ -266,6 +330,7 @@ func PublishFile() {
 		loadingMu.Lock()
 		loading = false
 		loadingMu.Unlock()
+		requestIconUpdate()
 		return
 	}
 
@@ -275,6 +340,7 @@ func PublishFile() {
 		loadingMu.Lock()
 		loading = false
 		loadingMu.Unlock()
+		requestIconUpdate()
 		return
 	}
 
@@ -298,6 +364,7 @@ func PublishFile() {
 	loadingMu.Lock()
 	loading = false
 	loadingMu.Unlock()
+	requestIconUpdate()
 }
 
 func DownloadRecent() {
@@ -308,17 +375,16 @@ func DownloadRecent() {
 		return
 	}
 
-	// guess file type (with dot)
+	// guess ext by name
 	ft := filepath.Ext(fname)
-	// clipboard data has no fname
+	// clipboard data has no fname (shouldnt be possible tbh)
 	if ft == "" {
 		ft = ".txt"
 	}
 
-	// build sensible default name
 	defaultName := fname
 	if defaultName == "" {
-		defaultName = "copy_text" + ft
+		defaultName = "clipboard" + ft
 	}
 
 	// configure save-as dialog
@@ -333,7 +399,7 @@ func DownloadRecent() {
 		savePath += ft
 	}
 
-	// 4) write out
+	// Write out file
 	if err := os.WriteFile(savePath, data, 0644); err != nil {
 		log.Printf("Failed to write file: %v", err)
 	} else {
@@ -349,14 +415,9 @@ func CopyRecentToClipboard() {
 		return
 	}
 
-	if ctype == "text/plain" {
-		text := string(data)
-		if err := clipboard.WriteAll(text); err != nil {
-			log.Printf("Clipboard write failed: %v", err)
-		} else {
-			log.Println("Copied recent text note to clipboard")
-		}
-	} else {
-		log.Printf("Cannot copy non-text (%s) to clipboard", ctype)
+	err := clipboard.Write(data, ctype)
+
+	if err != nil {
+		log.Println("Couldn't copy to clipboard")
 	}
 }

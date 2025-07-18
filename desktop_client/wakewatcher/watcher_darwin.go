@@ -1,5 +1,3 @@
-//go:build darwin
-
 package wakewatcher
 
 /*
@@ -14,7 +12,6 @@ static void setup() {
         object:nil
         queue:[NSOperationQueue mainQueue]
         usingBlock:^(NSNotification *note) {
-            NSLog(@"Received wake notification");
             extern void handleWakeEvent();
             handleWakeEvent();
         }];
@@ -22,9 +19,31 @@ static void setup() {
 */
 import "C"
 
+import (
+	"sync"
+	"time"
+)
+
+var (
+	WakeCallback func()
+	lastWakeTime time.Time
+	wakeMutex    sync.Mutex
+)
+
 //export handleWakeEvent
 func handleWakeEvent() {
-	go WakeCallback()
-}
+	wakeMutex.Lock()
+	now := time.Now()
 
-var WakeCallback func()
+	// Debounce wake cuz macOS sends 2 for some reason?
+	if now.Sub(lastWakeTime) < 2*time.Second {
+		wakeMutex.Unlock()
+		return
+	}
+	lastWakeTime = now
+	wakeMutex.Unlock()
+
+	if WakeCallback != nil {
+		go WakeCallback()
+	}
+}
