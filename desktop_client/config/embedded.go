@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-const marker = "\n--CERTS-BEGIN--\n"
+const marker = "\n--APPEND_MARKER--\n"
 const maxTailSize = 64 * 1024
 
 // Exported variables

@@ -1,20 +1,15 @@
 import os
 import json
 
-def build_binary(platform: PLATFORM, device_id, cert, key, group_key):
-    """
-    Appends device-specific credentials to a prebuilt binary for the given platform.
-    Returns the final binary as bytes.
-    """
-    # Paths
+def build_binary(platform, device_id, cert, key, group_key):
     output_dir = "./tmp/output"
     os.makedirs(output_dir, exist_ok=True)
 
     # Store platform targets
     targets = {
-        PLATFORM.LINUX:     "device_linux",
-        PLATFORM.MACOS:     "device_darwin",
-        PLATFORM.WINDOWS:   "device_windows.exe"
+        "LINUX":     "device_linux",
+        "MACOS":     "device_darwin",
+        "WINDOWS":   "device_windows.exe"
     }
 
     if platform not in targets:
@@ -27,7 +22,7 @@ def build_binary(platform: PLATFORM, device_id, cert, key, group_key):
         return None
 
     # Load CA cert
-    ca_cert = open("./certs/ca.crt").read()
+    ca_cert = open("./tmp/ca.crt").read()
 
     # Bundle credentials + metadata
     metadata = {
@@ -42,5 +37,15 @@ def build_binary(platform: PLATFORM, device_id, cert, key, group_key):
     marker = b"\n--APPEND_MARKER--\n"
     json_blob = json.dumps(metadata).encode("utf-8")
     final_binary = open(binary_path, "rb").read() + marker + json_blob
+
+    # Write files out (dev)
+    output_binary_path = os.path.join(output_dir, "out")
+    with open(output_binary_path, "wb") as f:
+        f.write(final_binary)
+    os.chmod(output_binary_path, 0o755)
+    
+    metadata_json_path = os.path.join(output_dir, f"out.metadata.json")
+    with open(metadata_json_path, "w") as f:
+        json.dump(metadata, f, indent=2)
 
     return final_binary

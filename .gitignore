@@ -4,6 +4,7 @@
 *device_linux
 *device_windows
 *device_darwin
+*out
 
 # Certificate and key files
 *.crt
