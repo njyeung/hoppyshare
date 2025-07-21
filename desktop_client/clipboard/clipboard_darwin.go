@@ -30,6 +30,30 @@ void* ReadClipboard(int* outLength, char** outMimeType) {
             }
         }
 
+        // Try JPEG
+        if ([types containsObject:@"public.jpeg"]) {
+            NSData *data = [pb dataForType:@"public.jpeg"];
+            if (data) {
+                *outLength = (int)[data length];
+                *outMimeType = strdup("image/jpeg");
+                void *buffer = malloc(*outLength);
+                memcpy(buffer, [data bytes], *outLength);
+                return buffer;
+            }
+        }
+
+        // Try GIF
+        if ([types containsObject:@"com.compuserve.gif"]) {
+            NSData *data = [pb dataForType:@"com.compuserve.gif"];
+            if (data) {
+                *outLength = (int)[data length];
+                *outMimeType = strdup("image/gif");
+                void *buffer = malloc(*outLength);
+                memcpy(buffer, [data bytes], *outLength);
+                return buffer;
+            }
+        }
+
         // Fallback to TIFF -> PNG conversion
         if ([types containsObject:NSPasteboardTypeTIFF]) {
             NSImage *img = [[NSImage alloc] initWithPasteboard:pb];
@@ -77,6 +101,12 @@ int WriteClipboard(void* data, int length, const char* mimeType) {
             return success ? 0 : -1;
         } else if ([type isEqualToString:@"image/png"]) {
             BOOL success = [pb setData:nsData forType:NSPasteboardTypePNG];
+            return success ? 0 : -1;
+        } else if ([type isEqualToString:@"image/jpeg"]) {
+            BOOL success = [pb setData:nsData forType:@"public.jpeg"];
+            return success ? 0 : -1;
+        } else if ([type isEqualToString:@"image/gif"]) {
+            BOOL success = [pb setData:nsData forType:@"com.compuserve.gif"];
             return success ? 0 : -1;
         }
 

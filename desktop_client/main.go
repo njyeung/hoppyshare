@@ -1,8 +1,10 @@
 package main
 
 import (
+	"desktop_client/ble"
 	"desktop_client/clipboard"
 	"desktop_client/config"
+	"desktop_client/connectivity"
 	"desktop_client/mqttclient"
 	"desktop_client/playsound"
 	"desktop_client/systrayhelpers"
@@ -70,15 +72,21 @@ var (
 	loadingMu sync.RWMutex
 
 	messageAvailable    bool
+	lastMessageSource   MessageFrom
 	messageMu           sync.RWMutex
 	notificationTimer   *time.Timer
 	notificationTimerMu sync.Mutex
 
 	mDownloadRecent  *systray.MenuItem
 	mCopyToClipboard *systray.MenuItem
+
+	networkUp bool = true
+	networkMu sync.Mutex
+	bleState  bool = false
 )
 
 var iconUpdateCh = make(chan struct{}, 1)
+var bleOps = make(chan func(), 1)
 
 func requestIconUpdate() {
 	select {
@@ -89,16 +97,30 @@ func requestIconUpdate() {
 }
 
 func main() {
+	go func() {
+		for op := range bleOps {
+			op()
+		}
+	}()
+
 	if err := config.LoadEmbeddedConfig(); err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
+
+	connectivity.Start()
 
 	clientID, err = mqttclient.Connect()
 	if err != nil {
 		log.Printf("Full error with mqtt: %v", err)
 	}
 
-	mqttclient.SetOnMessageCallback(HandleNewNotification)
+	mqttclient.SetOnMessageCallback(func() {
+		HandleNewNotification(MQTT)
+	})
+
+	ble.SetOnMessageCallback(func() {
+		HandleNewNotification(BLE)
+	})
 
 	wakewatcher.SetCallback(func() {
 		mqttclient.Disconnect()
@@ -135,11 +157,35 @@ func onReady() {
 	systray.AddSeparator()
 	mDownloadRecent = systray.AddMenuItem("Download", "Download the most recent file")
 	mCopyToClipboard = systray.AddMenuItem("Copy to Clipboard", "Download the most recent file")
-	mDownloadRecent.Disable()
-	mCopyToClipboard.Disable()
+	systray.AddSeparator()
+	mBLE := systray.AddMenuItemCheckbox("BLE", "Use BLE", !networkUp)
 	systray.AddSeparator()
 	mRestart := systray.AddMenuItem("Restart", "Restart the app")
 	mQuit := systray.AddMenuItem("Quit", "Quit the app")
+
+	mDownloadRecent.Disable()
+	mCopyToClipboard.Disable()
+
+	connectivity.OnChange(func(up bool) {
+		networkMu.Lock()
+		networkUp = up
+		bleState = !up
+		defer networkMu.Unlock()
+
+		select {
+		case bleOps <- func() {
+			if up {
+				ble.Stop()
+				mBLE.Uncheck()
+			} else {
+				ble.Start(clientID, config.DeviceID)
+				mBLE.Check()
+			}
+		}:
+		default:
+
+		}
+	})
 
 	go func() {
 		for {
@@ -180,6 +226,25 @@ func onReady() {
 			<-mQuit.ClickedCh
 			systray.Quit()
 			return
+		}
+	}()
+	go func() {
+		for {
+			<-mBLE.ClickedCh
+
+			networkMu.Lock()
+			bleState = !mBLE.Checked()
+			log.Println(bleState)
+			if mBLE.Checked() {
+				ble.Stop()
+				mBLE.Uncheck()
+
+			} else {
+				ble.Start(clientID, config.DeviceID)
+				mBLE.Check()
+			}
+
+			networkMu.Unlock()
 		}
 	}()
 
@@ -229,10 +294,17 @@ func onReady() {
 	}()
 }
 
-func HandleNewNotification() {
+type MessageFrom int
 
+const (
+	MQTT MessageFrom = iota
+	BLE
+)
+
+func HandleNewNotification(source MessageFrom) {
 	messageMu.Lock()
 	messageAvailable = true
+	lastMessageSource = source
 	messageMu.Unlock()
 
 	mDownloadRecent.Enable()
@@ -252,12 +324,12 @@ func HandleNewNotification() {
 		mCopyToClipboard.Disable()
 
 		mqttclient.ClearMsg()
+		ble.ClearMsg()
 
 		messageMu.Lock()
 		messageAvailable = false
 		messageMu.Unlock()
 		requestIconUpdate()
-
 	})
 	notificationTimerMu.Unlock()
 
@@ -307,9 +379,14 @@ func PublishClipboard() {
 	topic := fmt.Sprintf("users/%s/notes", clientID)
 	filename := fmt.Sprintf("clipboard%s", ext)
 	log.Println(filename)
-	err = mqttclient.Publish(topic, []byte(content), mimeType, filename)
-	if err != nil {
-		log.Println(err)
+
+	if bleState {
+		ble.Publish([]byte("HELLO"))
+	} else {
+		err = mqttclient.Publish(topic, []byte(content), mimeType, filename)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 
 	loadingMu.Lock()
@@ -356,9 +433,16 @@ func PublishFile() {
 
 	topic := fmt.Sprintf("users/%s/notes", clientID)
 
-	err = mqttclient.Publish(topic, fileBytes, mimeType, fileName)
-	if err != nil {
-		log.Println(err)
+	if bleState {
+		err := ble.Publish([]byte("HELLO"))
+		if err != nil {
+			log.Println(err)
+		}
+	} else {
+		err = mqttclient.Publish(topic, fileBytes, mimeType, fileName)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 
 	loadingMu.Lock()
@@ -368,7 +452,23 @@ func PublishFile() {
 }
 
 func DownloadRecent() {
-	fname, _, data, ok := mqttclient.GetLastMessage()
+
+	var (
+		fname string
+		data  []byte
+		ok    bool
+	)
+
+	messageMu.RLock()
+	source := lastMessageSource
+	messageMu.RUnlock()
+
+	switch source {
+	case MQTT:
+		fname, _, data, ok = mqttclient.GetLastMessage()
+	case BLE:
+		fname, _, data, ok = ble.GetLastMessage()
+	}
 
 	if !ok {
 		log.Println("No recent message to download")
@@ -408,16 +508,29 @@ func DownloadRecent() {
 }
 
 func CopyRecentToClipboard() {
-	_, ctype, data, ok := mqttclient.GetLastMessage()
+	var (
+		ctype string
+		data  []byte
+		ok    bool
+	)
+
+	messageMu.RLock()
+	source := lastMessageSource
+	messageMu.RUnlock()
+
+	switch source {
+	case MQTT:
+		_, ctype, data, ok = mqttclient.GetLastMessage()
+	case BLE:
+		_, ctype, data, ok = ble.GetLastMessage()
+	}
 
 	if !ok {
 		log.Println("No recent message to copy")
 		return
 	}
 
-	err := clipboard.Write(data, ctype)
-
-	if err != nil {
+	if err := clipboard.Write(data, ctype); err != nil {
 		log.Println("Couldn't copy to clipboard")
 	}
 }
