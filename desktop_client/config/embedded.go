@@ -124,8 +124,6 @@ func loadDevFiles() error {
 		return fmt.Errorf("dev mode: device ID is empty")
 	}
 
-	fmt.Printf("CAPem DEBUG: %d bytes\n", len(CAPem))
-
 	fmt.Println("[config] Loaded config in DEV_MODE")
 
 	return nil

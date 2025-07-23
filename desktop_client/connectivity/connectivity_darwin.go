@@ -21,8 +21,7 @@ static void reachabilityCallback(
     SCNetworkReachabilityFlags flags,
     void *info
 ) {
-    bool up = (flags & kSCNetworkFlagsReachable) != 0
-               && (flags & kSCNetworkFlagsConnectionRequired) == 0;
+    bool up = (flags & kSCNetworkFlagsReachable) != 0 && (flags & kSCNetworkFlagsConnectionRequired) == 0;
     goNotifyNetworkChange(up);
 }
 
@@ -45,7 +44,6 @@ static void StartWatcher() {
 */
 import "C"
 
-// StartWatcher is called by connectivity.Start()
 func StartWatcher() error {
 	C.StartWatcher()
 	return nil
@@ -53,6 +51,5 @@ func StartWatcher() error {
 
 //export goNotifyNetworkChange
 func goNotifyNetworkChange(up C.bool) {
-	// this calls the user-registered callback
 	networkChanged(bool(up))
 }

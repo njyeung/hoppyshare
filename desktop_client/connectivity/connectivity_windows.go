@@ -4,36 +4,49 @@
 package connectivity
 
 import (
-	"unsafe"
-
-	"golang.org/x/sys/windows"
+	"log"
+	"net"
+	"time"
 )
-
-var (
-	modiphlpapi = windows.NewLazySystemDLL("iphlpapi.dll")
-	procNotify  = modiphlpapi.NewProc("NotifyIpInterfaceChange")
-)
-
-type _MibNotificationSpinLock uint64
 
 func StartWatcher() error {
-	// AF_UNSPEC = 0, watch IPv4 & IPv6, upcall into goOnChange
-	r, _, e := procNotify.Call(
-		uintptr(0),
-		uintptr(unsafe.Pointer(windows.NewCallback(goOnChange))),
-		uintptr(0),
-		uintptr(0),
-		uintptr(0),
-	)
-	if r != 0 {
-		return error(e)
-	}
+	// Use a simple polling approach instead of Windows API callbacks to avoid stupid CGO
+	go pollNetworkState()
 	return nil
 }
 
-//export goOnChange
-func goOnChange(context, row, changeType uintptr) uintptr {
-	// changeType tells you if connectivity to Internet is gained/lost
-	networkChanged(changeType == windows.MibParameterNotification)
-	return 0
+func pollNetworkState() {
+	lastState := isNetworkUp()
+	networkChanged(lastState)
+
+	for {
+		time.Sleep(5 * time.Second)
+		currentState := isNetworkUp()
+		if currentState != lastState {
+			networkChanged(currentState)
+			lastState = currentState
+		}
+	}
+}
+
+func isNetworkUp() bool {
+	// Check if we can resolve a DNS name and have network interfaces up
+	_, err := net.LookupHost("google.com")
+	if err != nil {
+		// Also check if we have any non-loopback interfaces up
+		interfaces, err := net.Interfaces()
+		if err != nil {
+			return false
+		}
+
+		for _, iface := range interfaces {
+			if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagLoopback == 0 {
+				// We have an interface up, but DNS failed, so partial connectivity
+				log.Printf("Interface %s is up but DNS resolution failed", iface.Name)
+				return false
+			}
+		}
+		return false
+	}
+	return true
 }

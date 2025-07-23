@@ -65,6 +65,7 @@ var loading4IconWindows []byte
 //go:embed assets/notification.wav
 var notificationSound []byte
 
+// MAX 5 MINUTES SINCE OUR MSG HASH ROTATES EVERY 5 MINS
 const MESSAGE_CACHE_DURATION = 120
 
 var (
@@ -167,23 +168,23 @@ func onReady() {
 	mCopyToClipboard.Disable()
 
 	connectivity.OnChange(func(up bool) {
-		networkMu.Lock()
-		networkUp = up
-		bleState = !up
-		defer networkMu.Unlock()
-
 		select {
 		case bleOps <- func() {
+			networkMu.Lock()
+			defer networkMu.Unlock()
+
+			networkUp = up
 			if up {
 				ble.Stop()
+				bleState = false
 				mBLE.Uncheck()
 			} else {
 				ble.Start(clientID, config.DeviceID)
+				bleState = true
 				mBLE.Check()
 			}
 		}:
 		default:
-
 		}
 	})
 
@@ -232,19 +233,24 @@ func onReady() {
 		for {
 			<-mBLE.ClickedCh
 
-			networkMu.Lock()
-			bleState = !mBLE.Checked()
-			log.Println(bleState)
-			if mBLE.Checked() {
-				ble.Stop()
-				mBLE.Uncheck()
+			select {
+			case bleOps <- func() {
+				networkMu.Lock()
+				defer networkMu.Unlock()
 
-			} else {
-				ble.Start(clientID, config.DeviceID)
-				mBLE.Check()
+				if mBLE.Checked() {
+					ble.Stop()
+					bleState = false
+					mBLE.Uncheck()
+				} else {
+					ble.Start(clientID, config.DeviceID)
+					bleState = true
+					mBLE.Check()
+				}
+			}:
+			default:
+				// If bleOps channel is full, skip this click
 			}
-
-			networkMu.Unlock()
 		}
 	}()
 
@@ -381,7 +387,7 @@ func PublishClipboard() {
 	log.Println(filename)
 
 	if bleState {
-		ble.Publish([]byte("HELLO"))
+		ble.Publish([]byte(content), mimeType, filename)
 	} else {
 		err = mqttclient.Publish(topic, []byte(content), mimeType, filename)
 		if err != nil {
@@ -434,7 +440,7 @@ func PublishFile() {
 	topic := fmt.Sprintf("users/%s/notes", clientID)
 
 	if bleState {
-		err := ble.Publish([]byte("HELLO"))
+		err := ble.Publish(fileBytes, mimeType, fileName)
 		if err != nil {
 			log.Println(err)
 		}

@@ -15,7 +15,7 @@ void* ReadClipboard(int* outLength, char** outMimeType) {
     }
 
     // Try PNG first (registered format)
-    UINT pngFormat = RegisterClipboardFormat(L"PNG");
+    UINT pngFormat = RegisterClipboardFormat("PNG");
     if (IsClipboardFormatAvailable(pngFormat)) {
         HANDLE hData = GetClipboardData(pngFormat);
         if (hData) {
@@ -35,7 +35,7 @@ void* ReadClipboard(int* outLength, char** outMimeType) {
     }
 
     // Try JPEG (JFIF format)
-    UINT jpegFormat = RegisterClipboardFormat(L"JFIF");
+    UINT jpegFormat = RegisterClipboardFormat("JFIF");
     if (IsClipboardFormatAvailable(jpegFormat)) {
         HANDLE hData = GetClipboardData(jpegFormat);
         if (hData) {
@@ -55,7 +55,7 @@ void* ReadClipboard(int* outLength, char** outMimeType) {
     }
 
     // Try GIF format
-    UINT gifFormat = RegisterClipboardFormat(L"GIF");
+    UINT gifFormat = RegisterClipboardFormat("GIF");
     if (IsClipboardFormatAvailable(gifFormat)) {
         HANDLE hData = GetClipboardData(gifFormat);
         if (hData) {
@@ -155,7 +155,7 @@ int WriteClipboard(void* data, int length, const char* mimeType) {
             return -1;
         }
     } else if (strcmp(mimeType, "image/png") == 0) {
-        UINT pngFormat = RegisterClipboardFormat(L"PNG");
+        UINT pngFormat = RegisterClipboardFormat("PNG");
 
         HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, length);
         if (!hMem) {
@@ -173,7 +173,7 @@ int WriteClipboard(void* data, int length, const char* mimeType) {
             return -1;
         }
     } else if (strcmp(mimeType, "image/jpeg") == 0) {
-        UINT jpegFormat = RegisterClipboardFormat(L"JFIF");
+        UINT jpegFormat = RegisterClipboardFormat("JFIF");
 
         HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, length);
         if (!hMem) {
@@ -191,7 +191,7 @@ int WriteClipboard(void* data, int length, const char* mimeType) {
             return -1;
         }
     } else if (strcmp(mimeType, "image/gif") == 0) {
-        UINT gifFormat = RegisterClipboardFormat(L"GIF");
+        UINT gifFormat = RegisterClipboardFormat("GIF");
 
         HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, length);
         if (!hMem) {

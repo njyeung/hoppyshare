@@ -1,4 +1,6 @@
-#import "BLEBridge.h"
+//go:build darwin
+
+#import "BLEBridge_darwin.h"
 
 // forward Go callback
 extern void GoOnBLEMessage(const char *deviceID, const void *data, int length);
@@ -25,10 +27,19 @@ extern void GoOnBLEMessage(const char *deviceID, const void *data, int length);
     if (self = [super init]) {
         _deviceID = [deviceID copy];
         _bleQueue = dispatch_queue_create("com.example.ble", DISPATCH_QUEUE_SERIAL);
-        uint16_t shortHash = (uint16_t)((uint64_t)[clientID hash] & 0xFFFF);
+        // Use simple cross-platform hash
+        uint32_t hash = 0;
+        const char* str = [clientID UTF8String];
+        for (int i = 0; str[i] != '\0'; i++) {
+            hash = hash * 31 + (unsigned char)str[i];
+        }
+        uint16_t shortHash = (uint16_t)(hash & 0xFFFF);
+        
         _serviceUUID = [CBUUID UUIDWithString:
             [NSString stringWithFormat:@"0000%04X-0000-1000-8000-00805F9B34FB", shortHash]
         ];
+        NSLog(@"Generated service UUID: %@ (hash: %u, shortHash: %u)", _serviceUUID.UUIDString, hash, shortHash);
+
         _subscribedCentrals   = [NSMutableSet set];
         _discoveredPeripherals = [NSMutableDictionary dictionary];
         _connectedPeripherals  = [NSMutableDictionary dictionary];
@@ -133,7 +144,7 @@ didUnsubscribeFromCharacteristic:(CBCharacteristic*)ch {
         if ([r.characteristic.UUID isEqual:self.localCharacteristic.UUID]) {
             NSData *d = r.value;
             if (d) {
-                NSLog(@"📥 Received %lu bytes", (unsigned long)d.length);
+                NSLog(@"Received %lu bytes", (unsigned long)d.length);
                 [self handleReceivedData:d from:@"local"];
             }
             [pm respondToRequest:r withResult:CBATTErrorSuccess];
@@ -142,7 +153,7 @@ didUnsubscribeFromCharacteristic:(CBCharacteristic*)ch {
 }
 
 - (void)peripheralManagerIsReadyToUpdateSubscribers:(CBPeripheralManager*)pm {
-    NSLog(@"📱 Ready to retry updateValue");
+    NSLog(@"Ready to retry updateValue");
 }
 
 #pragma mark — CBCentralManagerDelegate
@@ -171,7 +182,7 @@ didUnsubscribeFromCharacteristic:(CBCharacteristic*)ch {
 
 - (void)centralManager:(CBCentralManager*)cm
  didConnectPeripheral:(CBPeripheral*)p {
-    NSLog(@"Connected to %@", p.name ?: @"?");
+    // NSLog(@"Connected to %@", p.name ?: @"?");
     self.connectedPeripherals[p.identifier] = p;
     [p discoverServices:@[ self.serviceUUID ]];
 }
@@ -186,7 +197,7 @@ didFailToConnectPeripheral:(CBPeripheral*)p
 - (void)centralManager:(CBCentralManager*)cm
 didDisconnectPeripheral:(CBPeripheral*)p
                  error:(NSError*)err {
-    NSLog(@"🔌 Disconnected: %@ (%@)", p.name ?: @"?", err.localizedDescription ?: @"");
+    NSLog(@"Disconnected: %@ (%@)", p.name ?: @"?", err.localizedDescription ?: @"");
     [self.connectedPeripherals removeObjectForKey:p.identifier];
     [self.discoveredPeripherals removeObjectForKey:p.identifier];
     if (cm.state == CBManagerStatePoweredOn && self.connectedPeripherals.count==0) {

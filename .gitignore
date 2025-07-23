@@ -6,6 +6,10 @@
 *device_darwin
 *out
 
+# windows libs
+*generated_headers
+*cppwinrt
+
 # Certificate and key files
 *.crt
 *.key

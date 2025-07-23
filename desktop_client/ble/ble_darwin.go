@@ -1,12 +1,11 @@
 //go:build darwin
-// +build darwin
 
 package ble
 
 /*
 #cgo CFLAGS: -I${SRCDIR} -x objective-c
 #cgo LDFLAGS: -framework Foundation -framework CoreBluetooth
-#import "BLEBridge.h"
+#import "BLEBridge_darwin.h"
 */
 import "C"
 import "unsafe"
@@ -39,9 +38,7 @@ func publishBLE(payload []byte) error {
 
 //export GoOnBLEMessage
 func GoOnBLEMessage(deviceID *C.char, data *C.char, length C.int) {
-	if onMessage != nil {
-		id := C.GoString(deviceID)
-		body := C.GoBytes(unsafe.Pointer(data), length)
-		onMessage(id, body)
-	}
+	id := C.GoString(deviceID)
+	body := C.GoBytes(unsafe.Pointer(data), length)
+	onMessage(id, body)
 }

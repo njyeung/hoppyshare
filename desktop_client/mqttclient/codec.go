@@ -21,7 +21,7 @@ type DecodedPayload struct {
 	Payload  []byte
 }
 
-func encodeMessage(mimeType, filename string, deviceID string, payload []byte) ([]byte, error) {
+func EncodeMessage(mimeType string, filename string, deviceID string, payload []byte) ([]byte, error) {
 	groupKey, err := decryptGroupKey(config.GroupKey, config.KeyPem)
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func encodeMessage(mimeType, filename string, deviceID string, payload []byte) (
 	return buf.Bytes(), nil
 }
 
-func decodeMessage(data []byte) (*DecodedPayload, error) {
+func DecodeMessage(data []byte) (*DecodedPayload, error) {
 	buf := bytes.NewReader(data)
 
 	typeLen, _ := buf.ReadByte()

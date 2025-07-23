@@ -44,38 +44,40 @@ func Connect() (string, error) {
 		Certificates: []tls.Certificate{cert},
 	}
 
-	opts := mqtt.NewClientOptions()
-	opts.AddBroker("tls://18.188.110.246:8883")
-	opts.SetClientID(fmt.Sprintf("%s-%d", clientID, time.Now().Unix()))
-	opts.SetTLSConfig(tlsConfig)
-	opts.SetKeepAlive(60 * time.Second)
-	opts.SetAutoReconnect(true)
-	opts.SetConnectRetry(true)
-	opts.SetConnectRetryInterval(5 * time.Second)
-	opts.SetMaxReconnectInterval(30 * time.Second)
+	go func() {
+		opts := mqtt.NewClientOptions()
+		opts.AddBroker("tls://18.188.110.246:8883")
+		opts.SetClientID(fmt.Sprintf("%s-%d", clientID, time.Now().Unix()))
+		opts.SetTLSConfig(tlsConfig)
+		opts.SetKeepAlive(60 * time.Second)
+		opts.SetAutoReconnect(true)
+		opts.SetConnectRetry(true)
+		opts.SetConnectRetryInterval(5 * time.Second)
+		opts.SetMaxReconnectInterval(30 * time.Second)
 
-	opts.OnConnect = func(c mqtt.Client) {
-		Subscribe(c)
-		systrayhelpers.SetTooltip("Connected")
-	}
+		opts.OnConnect = func(c mqtt.Client) {
+			Subscribe(c)
+			systrayhelpers.SetTooltip("Connected")
+		}
 
-	opts.OnConnectionLost = func(c mqtt.Client, err error) {
-		fmt.Printf("Connection lost: %v\n", err)
+		opts.OnConnectionLost = func(c mqtt.Client, err error) {
+			fmt.Printf("Connection lost: %v\n", err)
 
-		systrayhelpers.SetTooltip("Disconnected")
-	}
+			systrayhelpers.SetTooltip("Disconnected")
+		}
 
-	opts.OnReconnecting = func(c mqtt.Client, opts *mqtt.ClientOptions) {
-		log.Println("Attempting MQTT reconnect...")
-	}
+		opts.OnReconnecting = func(c mqtt.Client, opts *mqtt.ClientOptions) {
+			log.Println("Attempting MQTT reconnect...")
+		}
 
-	client = mqtt.NewClient(opts)
+		client = mqtt.NewClient(opts)
 
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		return "", fmt.Errorf("MQTT connect failed: %w", token.Error())
-	}
+		if token := client.Connect(); token.Wait() && token.Error() != nil {
+			// return "", fmt.Errorf("MQTT connect failed: %w", token.Error())
+		}
 
-	log.Printf("Connected to MQTT as %s", clientID)
+		log.Printf("Connected to MQTT as %s", clientID)
+	}()
 
 	return clientID, nil
 }
@@ -106,7 +108,7 @@ func Subscribe(client mqtt.Client) {
 
 	if token := client.Subscribe(notesTopic, 1, func(client mqtt.Client, m mqtt.Message) {
 
-		decoded, err := decodeMessage(m.Payload())
+		decoded, err := DecodeMessage(m.Payload())
 
 		if err != nil {
 			log.Printf("Failed to decode message: %v", err)
@@ -179,7 +181,7 @@ func Publish(topic string, data []byte, contentType, filename string) error {
 		return fmt.Errorf("cannot publish: client not connected")
 	}
 
-	encoded, err := encodeMessage(contentType, filename, config.DeviceID, data)
+	encoded, err := EncodeMessage(contentType, filename, config.DeviceID, data)
 
 	if err != nil {
 		log.Printf("Failed to encode message")
