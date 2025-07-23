@@ -1,7 +1,7 @@
 from mosquitto_api import pub_settings, add_device
 import mosquitto_api
 from config import supabase 
-from actions.get_devices import get_devices
+from get_devices import get_devices
 from build_binary import build_binary
 import uuid
 from utils import error_response, success_response

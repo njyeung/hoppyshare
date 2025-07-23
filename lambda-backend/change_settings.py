@@ -1,6 +1,6 @@
 from mosquitto_api import pub_settings
 from config import supabase 
-from actions.get_devices import get_devices
+from get_devices import get_devices
 from utils import error_response, forbidden_response, success_response
 def change_settings(uid, device_id, new_settings):
 

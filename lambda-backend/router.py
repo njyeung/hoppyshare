@@ -1,11 +1,11 @@
 from utils import success_response, error_response, get_uid_from_auth_header, forbidden_response
 from config import SUPABASE_SERVICE_SECRET
-from actions.onboard_user import onboard_user
-from actions.add_device import add_device
-from actions.get_devices import get_devices
-from actions.revoke_device import revoke_device
-from actions.change_settings import change_settings
-from actions.delete_user import delete_user
+from onboard_user import onboard_user
+from add_device import add_device
+from get_devices import get_devices
+from revoke_device import revoke_device
+from change_settings import change_settings
+from delete_user import delete_user
 from mosquitto_api import reload_mosquitto
 import json
 
@@ -65,5 +65,5 @@ def route_action(event):
         case ("DELETE", "/api/user"):
 
             return delete_user(uid)
-            
+
     return error_response("Unknown endpoint")

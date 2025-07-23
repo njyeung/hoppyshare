@@ -1,0 +1,18 @@
+# Use Amazon Linux 2 base with Python 3.10
+FROM public.ecr.aws/lambda/python:3.10
+
+# Create app directory
+WORKDIR /var/task
+
+# Copy your code and requirements
+COPY *.py ./
+COPY ./certs ./certs
+COPY requirements.txt ./
+
+# Install dependencies into /var/task (Lambda root)
+RUN pip install -r requirements.txt -t .
+
+RUN yum install -y zip
+
+# Zip everything into function.zip
+RUN zip -r9 /tmp/function.zip .
