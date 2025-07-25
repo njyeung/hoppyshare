@@ -7,6 +7,7 @@ import (
 	"desktop_client/connectivity"
 	"desktop_client/mqttclient"
 	"desktop_client/playsound"
+	"desktop_client/startup"
 	"desktop_client/systrayhelpers"
 	"desktop_client/wakewatcher"
 	_ "embed"
@@ -98,14 +99,22 @@ func requestIconUpdate() {
 }
 
 func main() {
+	// Handle deletion of original executable if requested
+	handleOriginalDeletion()
+
 	go func() {
 		for op := range bleOps {
 			op()
 		}
 	}()
 
-	if err := config.LoadEmbeddedConfig(); err != nil {
-		log.Fatalf("failed to load config: %v", err)
+	if os.Getenv("DEV_MODE") == "1" {
+		config.LoadDevFiles()
+	} else {
+		err = startup.Initial()
+		if err != nil {
+			log.Fatalf("Could not run startup script: %v", err)
+		}
 	}
 
 	connectivity.Start()
@@ -538,5 +547,26 @@ func CopyRecentToClipboard() {
 
 	if err := clipboard.Write(data, ctype); err != nil {
 		log.Println("Couldn't copy to clipboard")
+	}
+}
+
+// handleOriginalDeletion checks for --delete-original flag and deletes the specified file
+func handleOriginalDeletion() {
+	for i, arg := range os.Args {
+		if arg == "--delete-original" && i+1 < len(os.Args) {
+			originalPath := os.Args[i+1]
+
+			// Small delay to ensure original process has fully exited
+			time.Sleep(100 * time.Millisecond)
+
+			// Attempt to delete the original executable
+			err := os.Remove(originalPath)
+			if err != nil {
+				log.Printf("Could not delete original executable at %s: %v", originalPath, err)
+			} else {
+				log.Printf("Successfully deleted original executable at %s", originalPath)
+			}
+			break
+		}
 	}
 }

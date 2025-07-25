@@ -6,7 +6,6 @@ from get_devices import get_devices
 from revoke_device import revoke_device
 from change_settings import change_settings
 from delete_user import delete_user
-from mosquitto_api import reload_mosquitto
 import json
 
 def route_action(event):
@@ -37,8 +36,6 @@ def route_action(event):
         return forbidden_response(str(e))
 
     match (method, path):
-        case("POST", "/api/reload"):
-            return reload_mosquitto()
         case ("POST", "/api/onboard"):
             return onboard_user(uid)
         case ("POST" ,"/api/devices"):

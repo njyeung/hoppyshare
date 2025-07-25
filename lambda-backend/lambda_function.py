@@ -1,6 +1,6 @@
 import json
 from router import route_action
-from mosquitto_api import reload_mosquitto
+
 def handler(event, context):
     try:
         res = route_action(event)

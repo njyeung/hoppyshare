@@ -2,12 +2,15 @@ package config
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/zalando/go-keyring"
 )
 
 const marker = "\n--APPEND_MARKER--\n"
@@ -22,6 +25,8 @@ var (
 	GroupKey []byte
 )
 
+const keyringService = "HoppyShare"
+
 type embeddedData struct {
 	DeviceID string `json:"device_id"`
 	Cert     string `json:"cert"`
@@ -30,10 +35,41 @@ type embeddedData struct {
 	GroupKey string `json:"group_key"` // hex encoded
 }
 
-func LoadEmbeddedConfig() error {
-	if os.Getenv("DEV_MODE") == "1" {
-		return loadDevFiles()
+func LoadKeysFromKeychain() error {
+	items := map[string]*[]byte{
+		"CA":       &CAPem,
+		"Cert":     &CertPem,
+		"Key":      &KeyPem,
+		"GroupKey": &GroupKey,
 	}
+
+	for key, dst := range items {
+		enc, err := keyring.Get(keyringService, key)
+		if err != nil {
+			return fmt.Errorf("keychain: could get Get %q: %w", key, err)
+		}
+		data, err := base64.StdEncoding.DecodeString(enc)
+		if err != nil {
+			return fmt.Errorf("keychain: could not Base64-decode %q: %w", key, err)
+		}
+		*dst = data
+	}
+
+	enc, err := keyring.Get(keyringService, "DeviceID")
+	if err != nil {
+		return fmt.Errorf("keychain: could not get DeviceID: %w", err)
+	}
+	idBytes, err := base64.StdEncoding.DecodeString(enc)
+	if err != nil {
+		return fmt.Errorf("keychain: could not Base64-decode DeviceID: %w", err)
+	}
+
+	DeviceID = string(idBytes)
+
+	return nil
+}
+
+func LoadEmbeddedConfig() error {
 
 	exePath, err := os.Executable()
 
@@ -87,7 +123,7 @@ func LoadEmbeddedConfig() error {
 	return nil
 }
 
-func loadDevFiles() error {
+func LoadDevFiles() error {
 	read := func(path string) ([]byte, error) {
 		return os.ReadFile(filepath.Clean(path))
 	}

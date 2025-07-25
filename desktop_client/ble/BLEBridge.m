@@ -27,19 +27,17 @@ extern void GoOnBLEMessage(const char *deviceID, const void *data, int length);
     if (self = [super init]) {
         _deviceID = [deviceID copy];
         _bleQueue = dispatch_queue_create("com.example.ble", DISPATCH_QUEUE_SERIAL);
-        // Use simple cross-platform hash
+        // Use simple cross-platform hash (matching C++ implementation)
         uint32_t hash = 0;
         const char* str = [clientID UTF8String];
         for (int i = 0; str[i] != '\0'; i++) {
             hash = hash * 31 + (unsigned char)str[i];
         }
         uint16_t shortHash = (uint16_t)(hash & 0xFFFF);
-        
         _serviceUUID = [CBUUID UUIDWithString:
             [NSString stringWithFormat:@"0000%04X-0000-1000-8000-00805F9B34FB", shortHash]
         ];
         NSLog(@"Generated service UUID: %@ (hash: %u, shortHash: %u)", _serviceUUID.UUIDString, hash, shortHash);
-
         _subscribedCentrals   = [NSMutableSet set];
         _discoveredPeripherals = [NSMutableDictionary dictionary];
         _connectedPeripherals  = [NSMutableDictionary dictionary];

@@ -5,6 +5,10 @@
 *device_windows
 *device_darwin
 *out
+*zip
+
+# python
+*__pycache/*
 
 # windows libs
 *generated_headers

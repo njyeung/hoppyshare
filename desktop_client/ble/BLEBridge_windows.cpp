@@ -58,7 +58,7 @@ private:
         return hash;
     }
 
-    // Generate service UUID from clientID hash
+    // Generate service UUID from clientID hash (matching BLEBridge.m exactly)
     void generateServiceUuid() {
         uint32_t hash = simpleHash(m_clientID);
         uint16_t shortHash = static_cast<uint16_t>(hash & 0xFFFF);
@@ -70,6 +70,9 @@ private:
             static_cast<uint32_t>((0x0000 << 16) | shortHash), 0x0000, 0x1000,
             {0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB}
         };
+        
+        // Print the full UUID for verification
+        wchar_t uuidStr[64];
         
         // Characteristic: 0000FFF1-0000-1000-8000-00805F9B34FB
         m_characteristicUuid = guid{
@@ -89,7 +92,7 @@ public:
         
         std::wcout << L"Starting BLE Bridge for Windows" << std::endl;
         
-        // requires UWP manifest capabilities  
+        // Skip advertising for now - requires UWP manifest capabilities  
         // startPeripheral();
         
         // Start as Central (Scanner)
@@ -201,7 +204,6 @@ private:
                 handleSubscriptionChanged();
             });
             
-            
             // Start advertising
             startAdvertising();
             
@@ -222,6 +224,87 @@ private:
             advertisement.LocalName(winrt::to_hstring("DC-Win"));
             std::wcout << L"Set advertisement local name to: DC-Win" << std::endl;
             
+            // Set up status changed handler to catch errors
+            m_publisher.StatusChanged([this](
+                BluetoothLEAdvertisementPublisher const&,
+                BluetoothLEAdvertisementPublisherStatusChangedEventArgs const& args) {
+                auto status = args.Status();
+                std::wcout << L"Advertising status change: " << static_cast<int>(status);
+                
+                switch (status) {
+                case BluetoothLEAdvertisementPublisherStatus::Created:
+                    std::wcout << L" (Created)" << std::endl;
+                    break;
+                case BluetoothLEAdvertisementPublisherStatus::Waiting:
+                    std::wcout << L" (Waiting)" << std::endl;
+                    break;
+                case BluetoothLEAdvertisementPublisherStatus::Started:
+                    std::wcout << L" (Started - SUCCESS!)" << std::endl;
+                    break;
+                case BluetoothLEAdvertisementPublisherStatus::Stopping:
+                    std::wcout << L" (Stopping)" << std::endl;
+                    break;
+                case BluetoothLEAdvertisementPublisherStatus::Stopped:
+                    std::wcout << L" (Stopped)" << std::endl;
+                    break;
+                case BluetoothLEAdvertisementPublisherStatus::Aborted:
+                    {
+                        auto error = args.Error();
+                        std::wcout << L" (Aborted) - Error code: " << static_cast<int>(error);
+                        switch (error) {
+                    case BluetoothError::Success:
+                        std::wcout << L" (Success - weird)";
+                        break;
+                    case BluetoothError::RadioNotAvailable:
+                        std::wcout << L" (Radio not available - Bluetooth disabled?)";
+                        break;
+                    case BluetoothError::ResourceInUse:
+                        std::wcout << L" (Resource in use)";
+                        break;
+                    case BluetoothError::DeviceNotConnected:
+                        std::wcout << L" (Device not connected)";
+                        break;
+                    case BluetoothError::OtherError:
+                        std::wcout << L" (Other error)";
+                        break;
+                    case BluetoothError::DisabledByPolicy:
+                        std::wcout << L" (Disabled by policy)";
+                        break;
+                    case BluetoothError::NotSupported:
+                        std::wcout << L" (Not supported)";
+                        break;
+                    case BluetoothError::DisabledByUser:
+                        std::wcout << L" (Disabled by user)";
+                        break;
+                    case BluetoothError::ConsentRequired:
+                        std::wcout << L" (Consent required)";
+                        break;
+                    case BluetoothError::TransportNotSupported:
+                        std::wcout << L" (Transport not supported)";
+                        break;
+                    default:
+                        std::wcout << L" (Unknown error)";
+                        break;
+                        }
+                        std::wcout << std::endl;
+                    }
+                    break;
+                default:
+                    std::wcout << L" (Unknown status)" << std::endl;
+                    break;
+                }
+            });
+            
+            // Print full UUID for debugging
+            wchar_t uuidStr[64];
+            swprintf(uuidStr, 64, L"%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                m_serviceUuid.Data1, m_serviceUuid.Data2, m_serviceUuid.Data3,
+                m_serviceUuid.Data4[0], m_serviceUuid.Data4[1],
+                m_serviceUuid.Data4[2], m_serviceUuid.Data4[3],
+                m_serviceUuid.Data4[4], m_serviceUuid.Data4[5],
+                m_serviceUuid.Data4[6], m_serviceUuid.Data4[7]);
+            std::wcout << L"Service UUID: " << uuidStr << std::endl;
+            
             // Start advertising
             m_publisher.Start();
             std::wcout << L"Called Start() on advertising publisher for device: " 
@@ -241,6 +324,7 @@ private:
             
             // Only scan for our service UUID
             m_watcher.ScanningMode(BluetoothLEScanningMode::Active);
+            // ScanFilter property doesn't exist in current SDK, filtering done in handler
             
             // Set up advertisement received handler
             m_watcher.Received([this](
@@ -395,7 +479,7 @@ private:
             }
             
         } catch (...) {
-            
+            // Silent fail
         }
     }
 

@@ -72,8 +72,11 @@ func Connect() (string, error) {
 
 		client = mqtt.NewClient(opts)
 
-		if token := client.Connect(); token.Wait() && token.Error() != nil {
-			// return "", fmt.Errorf("MQTT connect failed: %w", token.Error())
+		token := client.Connect()
+		token.Wait()
+		err = token.Error()
+		if err != nil {
+			log.Printf("Count not connect to MQTT as %s", clientID)
 		}
 
 		log.Printf("Connected to MQTT as %s", clientID)
@@ -107,7 +110,6 @@ func Subscribe(client mqtt.Client) {
 	log.Printf("Subscribing to %s and %s", notesTopic, settingsTopic)
 
 	if token := client.Subscribe(notesTopic, 1, func(client mqtt.Client, m mqtt.Message) {
-
 		decoded, err := DecodeMessage(m.Payload())
 
 		if err != nil {
@@ -117,10 +119,6 @@ func Subscribe(client mqtt.Client) {
 
 		if decoded.DeviceID == hashDeviceID(config.DeviceID) {
 			// Ignore messages from self
-
-			//placeholder for testing
-			log.Printf("[FROM SELF] Received %s (%s), %d bytes", decoded.Filename, decoded.Type, len(decoded.Payload))
-			cacheMsg(decoded.Filename, decoded.Type, decoded.Payload)
 			return
 		}
 
