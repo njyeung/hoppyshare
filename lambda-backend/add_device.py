@@ -67,7 +67,19 @@ def add_device(uid):
     data = {
         "deviceid": device_id,
         "uid": uid,
-        "settings": {"copy": True}, 
+        "settings": {
+            "nickname": "Unnamed Device",
+            "enabled": True,
+            "auto_copy": False,
+            "auto_paste": False,
+            "cache_time": 30,
+            "hotkey": "",
+            "enable_hotkey": False,
+            "notification_vol": 1.0,
+            "send_to_self": True,
+            "startup": True,
+            "destroy": False
+        }, 
         "cert": cert
     }
 

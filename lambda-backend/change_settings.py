@@ -26,7 +26,7 @@ def change_settings(uid, device_id, new_settings):
         .execute()
     )
 
-    # Publish new settings
+    # Get new settings list
     query = get_devices(uid)
     
     if query.get("status_code") != 200:
@@ -34,6 +34,6 @@ def change_settings(uid, device_id, new_settings):
 
     settings = query.get("json", {}).get("devices", [])
 
-    res = pub_settings(new_settings, uid)
+    res = pub_settings(settings, uid)
 
     return res
