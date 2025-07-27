@@ -28,8 +28,18 @@ def route_action(event):
 
     #         return onboard_user(uid)
 
+    # Public routes
+
+    match(method, path):
+        case ("POST", "/api/decrypt/{device_id}"):
+            device_id = pathParameters.get("device_id", None)
+            if not device_id:
+                return error_response("Missing device_id in path")
+            
+            return decrypt_device(device_id, body)
 
     # Protected routes (using supabase jwt)
+
     try:
         uid = get_uid_from_auth_header(headers)
     except Exception as e:
@@ -60,7 +70,6 @@ def route_action(event):
 
             return change_settings(uid, device_id, new_settings)
         case ("DELETE", "/api/user"):
-
             return delete_user(uid)
 
     return error_response("Unknown endpoint")

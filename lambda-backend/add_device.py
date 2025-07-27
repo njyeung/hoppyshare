@@ -8,11 +8,11 @@ from utils import error_response, success_response
 import base64
 import json
 import binascii
-
+import boto3
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.x509 import load_pem_x509_certificate
-
+import time
 
 def encrypt_group_key(group_key: bytes, cert_pem: str) -> bytes:
     cert = load_pem_x509_certificate(cert_pem.encode())
@@ -103,9 +103,34 @@ def add_device(uid):
         return error_response("Failed to set up device settings")
 
     # Build binary and return it
-    binary = build_binary("LINUX", device_id, cert, key, encrypted_group_key)
-    if binary is None:
+    binary, enc_key_b64 = build_binary("LINUX", device_id, cert, key, encrypted_group_key)
+    if binary is None or enc_key_b64 is None:
         return error_response("Failed to build device binary")
 
-    encoded = base64.b64encode(binary).decode("utf-8")
-    return success_response({"binary": encoded})
+    try:
+        supabase.table("encryption_keys").insert({"deviceid": device_id, "encryption_key": enc_key_b64}).execute()
+    except  Exception as e:
+        return error_response("Could not insert encryption_key into supabase")
+    
+    try:
+        output_bucket = "hoppyshare-binaries"
+        output_key = f"outputs/{device_id}_{int(time.time())}.bin"
+
+        s3 = boto3.client("s3")
+        s3.put_object(
+            Bucket=output_bucket,
+            Key=output_key,
+            Body=binary,
+            ContentType="application/octet-stream"
+        )
+
+        url = s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": output_bucket, "Key": output_key},
+            ExpiresIn=300  # 5 minutes
+        )
+
+        return success_response({"download_url": url})
+    except Exception as e:
+        return error_response(str(e))
+
