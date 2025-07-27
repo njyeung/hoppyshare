@@ -2,10 +2,14 @@ package config
 
 import (
 	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,12 +31,9 @@ var (
 
 const keyringService = "HoppyShare"
 
-type embeddedData struct {
-	DeviceID string `json:"device_id"`
-	Cert     string `json:"cert"`
-	Key      string `json:"key"`
-	CACert   string `json:"ca_cert"`
-	GroupKey string `json:"group_key"` // hex encoded
+type preDecrypt struct {
+	DeviceID      string `json:"device_id"`
+	EncryptedBlob string `json:"encrypted_blob"`
 }
 
 func LoadKeysFromKeychain() error {
@@ -69,10 +70,15 @@ func LoadKeysFromKeychain() error {
 	return nil
 }
 
+type decryptedConfig struct {
+	Cert     string `json:"cert"`
+	Key      string `json:"key"`
+	CACert   string `json:"ca_cert"`
+	GroupKey string `json:"group_key"` // hex encoded
+}
+
 func LoadEmbeddedConfig() error {
-
 	exePath, err := os.Executable()
-
 	if err != nil {
 		return fmt.Errorf("cannot find executable path: %w", err)
 	}
@@ -94,7 +100,10 @@ func LoadEmbeddedConfig() error {
 	if size > maxTailSize {
 		start = size - maxTailSize
 	}
-	f.Seek(start, 0)
+	_, err = f.Seek(start, 0)
+	if err != nil {
+		return fmt.Errorf("seek failed: %w", err)
+	}
 
 	buf := make([]byte, maxTailSize)
 	n, _ := f.Read(buf)
@@ -105,19 +114,56 @@ func LoadEmbeddedConfig() error {
 		return fmt.Errorf("marker not found in binary")
 	}
 
-	var raw embeddedData
-	if err := json.Unmarshal(buf[idx+len(marker):], &raw); err != nil {
+	var embedded preDecrypt
+	if err := json.Unmarshal(buf[idx+len(marker):], &embedded); err != nil {
 		return fmt.Errorf("cannot parse embedded JSON: %w", err)
 	}
 
-	DeviceID = string(raw.DeviceID)
+	encKeyBase64, err := FetchEncryptionKey(embedded, "https://.api.url") // TODO: PUT THE API GATEWAY URL
+	if err != nil {
+		return fmt.Errorf("failed to fetch decryption key: %w", err)
+	}
+	encKey, err := base64.StdEncoding.DecodeString(encKeyBase64)
+	if err != nil {
+		return fmt.Errorf("invalid base64 decryption key: %w", err)
+	}
+
+	cipherData, err := base64.StdEncoding.DecodeString(embedded.EncryptedBlob)
+	if err != nil {
+		return fmt.Errorf("invalid base64 encrypted blob: %w", err)
+	}
+	if len(cipherData) < 12 {
+		return fmt.Errorf("encrypted blob too short")
+	}
+	nonce := cipherData[:12]
+	ciphertext := cipherData[12:]
+
+	block, err := aes.NewCipher(encKey)
+	if err != nil {
+		return fmt.Errorf("failed to init cipher: %w", err)
+	}
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return fmt.Errorf("failed to init AES-GCM: %w", err)
+	}
+
+	plaintext, err := aesgcm.Open(nil, nonce, ciphertext, []byte(DeviceID))
+	if err != nil {
+		return fmt.Errorf("failed to decrypt blob: %w", err)
+	}
+
+	var raw decryptedConfig
+	if err := json.Unmarshal(plaintext, &raw); err != nil {
+		return fmt.Errorf("failed to parse decrypted JSON: %w", err)
+	}
+
+	DeviceID = embedded.DeviceID
 	CertPem = []byte(raw.Cert)
 	KeyPem = []byte(raw.Key)
 	CAPem = []byte(raw.CACert)
-
 	GroupKey, err = hex.DecodeString(raw.GroupKey)
 	if err != nil {
-		return fmt.Errorf("cannot decode group key: %w", err)
+		return fmt.Errorf("invalid hex group key: %w", err)
 	}
 
 	return nil
@@ -163,4 +209,51 @@ func LoadDevFiles() error {
 	fmt.Println("[config] Loaded config in DEV_MODE")
 
 	return nil
+}
+
+type decryptResponse struct {
+	EncryptionKey string `json:"encryption_key"`
+}
+
+func FetchEncryptionKey(cfg preDecrypt, apiBase string) (string, error) {
+	reqBody := map[string]string{
+		"encrypted_blob": cfg.EncryptedBlob,
+	}
+	jsonBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/api/decrypt/%s", apiBase, cfg.DeviceID)
+
+	req, err := http.NewRequest("POST", url, bytes.NewReader(jsonBytes))
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// Handle non-200 responses
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("server returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var fullResp struct {
+		JSON decryptResponse `json:"json"`
+	}
+	if err := json.Unmarshal(body, &fullResp); err != nil {
+		return "", fmt.Errorf("failed to unmarshal JSON response: %w", err)
+	}
+
+	return fullResp.JSON.EncryptionKey, nil
 }
