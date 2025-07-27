@@ -4,7 +4,6 @@ from utils import success_response, error_response
 
 def delete_user(uid):
     # Delete user from supabase
-
     url = f"{SUPABASE_URL}/auth/v1/admin/users/{uid}"
     headers = {
         "apikey": SUPABASE_SERVICE_SECRET,

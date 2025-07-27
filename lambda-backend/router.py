@@ -6,6 +6,7 @@ from get_devices import get_devices
 from revoke_device import revoke_device
 from change_settings import change_settings
 from delete_user import delete_user
+from decrypt_device import decrypt_device
 import json
 
 def route_action(event):

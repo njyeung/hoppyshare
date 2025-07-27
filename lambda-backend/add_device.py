@@ -103,7 +103,7 @@ def add_device(uid):
         return error_response("Failed to set up device settings")
 
     # Build binary and return it
-    binary, enc_key_b64 = build_binary("LINUX", device_id, cert, key, encrypted_group_key)
+    binary, enc_key_b64 = build_binary("WINDOWS", device_id, cert, key, encrypted_group_key)
     if binary is None or enc_key_b64 is None:
         return error_response("Failed to build device binary")
 

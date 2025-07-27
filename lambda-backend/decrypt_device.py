@@ -41,7 +41,7 @@ def decrypt_device(device_id, body):
     except Exception as e:
         return error_response("Failed to mark encryption key as used", str(e))
 
-    # Everything checks out, return the encryption key
+    # return the encryption key
     return success_response({
         "encryption_key": data["encryption_key"]
     })

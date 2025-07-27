@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -119,7 +120,16 @@ func LoadEmbeddedConfig() error {
 		return fmt.Errorf("cannot parse embedded JSON: %w", err)
 	}
 
-	encKeyBase64, err := FetchEncryptionKey(embedded, "https://.api.url") // TODO: PUT THE API GATEWAY URL
+	DeviceID = embedded.DeviceID
+
+	encKeyBase64, err := FetchEncryptionKey(embedded, "https://en43r23fua.execute-api.us-east-2.amazonaws.com")
+
+	log.Println("device id")
+	print(embedded.DeviceID)
+	log.Println("encrypted blob")
+	print(embedded.EncryptedBlob)
+	log.Println("encKeyBase64")
+	log.Println(encKeyBase64)
 	if err != nil {
 		return fmt.Errorf("failed to fetch decryption key: %w", err)
 	}
@@ -157,7 +167,6 @@ func LoadEmbeddedConfig() error {
 		return fmt.Errorf("failed to parse decrypted JSON: %w", err)
 	}
 
-	DeviceID = embedded.DeviceID
 	CertPem = []byte(raw.Cert)
 	KeyPem = []byte(raw.Key)
 	CAPem = []byte(raw.CACert)
@@ -224,7 +233,7 @@ func FetchEncryptionKey(cfg preDecrypt, apiBase string) (string, error) {
 		return "", fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/api/decrypt/%s", apiBase, cfg.DeviceID)
+	url := fmt.Sprintf("%s/prod/api/decrypt/%s", apiBase, cfg.DeviceID)
 
 	req, err := http.NewRequest("POST", url, bytes.NewReader(jsonBytes))
 	if err != nil {
@@ -248,12 +257,10 @@ func FetchEncryptionKey(cfg preDecrypt, apiBase string) (string, error) {
 		return "", fmt.Errorf("server returned %d: %s", resp.StatusCode, string(body))
 	}
 
-	var fullResp struct {
-		JSON decryptResponse `json:"json"`
-	}
+	var fullResp decryptResponse
 	if err := json.Unmarshal(body, &fullResp); err != nil {
 		return "", fmt.Errorf("failed to unmarshal JSON response: %w", err)
 	}
 
-	return fullResp.JSON.EncryptionKey, nil
+	return fullResp.EncryptionKey, nil
 }
