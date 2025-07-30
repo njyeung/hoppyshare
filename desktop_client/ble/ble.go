@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"desktop_client/config"
 	"desktop_client/mqttclient"
+	"desktop_client/settings"
 	"encoding/binary"
 	"log"
 	"net"
@@ -40,6 +41,11 @@ var (
 )
 
 func Start(clientID, deviceID string) error {
+
+	if !settings.GetSettings().Enabled {
+		return nil
+	}
+
 	mu.Lock()
 	defer mu.Unlock()
 

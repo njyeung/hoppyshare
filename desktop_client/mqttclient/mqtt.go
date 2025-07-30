@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"desktop_client/config"
+	"desktop_client/settings"
 	"desktop_client/systrayhelpers"
 	_ "embed"
 	"fmt"
@@ -110,6 +111,11 @@ func Subscribe(client mqtt.Client) {
 	log.Printf("Subscribing to %s and %s", notesTopic, settingsTopic)
 
 	if token := client.Subscribe(notesTopic, 1, func(client mqtt.Client, m mqtt.Message) {
+
+		if !settings.GetSettings().Enabled {
+			return
+		}
+
 		decoded, err := DecodeMessage(m.Payload())
 
 		if err != nil {
@@ -117,22 +123,23 @@ func Subscribe(client mqtt.Client) {
 			return
 		}
 
-		if decoded.DeviceID == hashDeviceID(config.DeviceID) {
-			// Ignore messages from self
+		if !settings.GetSettings().SendToSelf && decoded.DeviceID == hashDeviceID(config.DeviceID) {
 			return
 		}
 
 		cacheMsg(decoded.Filename, decoded.Type, decoded.Payload)
 
-		log.Printf("[NOTES] Received %s (%s), %d bytes", decoded.Filename, decoded.Type, len(decoded.Payload))
+		// log.Printf("[NOTES] Received %s (%s), %d bytes", decoded.Filename, decoded.Type, len(decoded.Payload))
 	}); token.Wait() && token.Error() != nil {
-		log.Printf("Subscribe error (notes): %v", token.Error())
+		// log.Printf("Subscribe error (notes): %v", token.Error())
 	}
 
 	if token := client.Subscribe(settingsTopic, 1, func(client mqtt.Client, m mqtt.Message) {
-		log.Printf("[SETTINGS] %s: %s", m.Topic(), string(m.Payload()))
+		// log.Printf("[SETTINGS] %s: %s", m.Topic(), string(m.Payload()))
+
+		settings.ParseSettings(m.Payload())
 	}); token.Wait() && token.Error() != nil {
-		log.Printf("Subscribe error (settings): %v", token.Error())
+		// log.Printf("Subscribe error (settings): %v", token.Error())
 	}
 }
 

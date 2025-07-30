@@ -7,6 +7,7 @@ import (
 	"desktop_client/connectivity"
 	"desktop_client/mqttclient"
 	"desktop_client/playsound"
+	"desktop_client/settings"
 	"desktop_client/startup"
 	"desktop_client/systrayhelpers"
 	"desktop_client/wakewatcher"
@@ -20,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gen2brain/beeep"
 	"github.com/getlantern/systray"
 	"github.com/sqweek/dialog"
 )
@@ -330,7 +332,9 @@ func HandleNewNotification(source MessageFrom) {
 		notificationTimer.Stop()
 	}
 
-	notificationTimer = time.AfterFunc(MESSAGE_CACHE_DURATION*time.Second, func() {
+	cacheTime := settings.GetSettings().CacheTime
+
+	notificationTimer = time.AfterFunc(time.Duration(cacheTime)*time.Second, func() {
 		messageMu.Lock()
 		messageAvailable = false
 		messageMu.Unlock()
@@ -349,6 +353,16 @@ func HandleNewNotification(source MessageFrom) {
 	notificationTimerMu.Unlock()
 
 	playsound.Play(notificationSound)
+
+	Notification("New Message")
+
+	if settings.GetSettings().AutoCopy {
+		CopyRecentToClipboard()
+
+		if settings.GetSettings().AutoPaste {
+			// TODO
+		}
+	}
 }
 
 func onExit() {
@@ -381,7 +395,8 @@ func PublishClipboard() {
 	content, mimeType, err := clipboard.Read()
 
 	if err != nil {
-		log.Printf("Clipboard read error: %v", err)
+		Notification("Could not read clipboard contents")
+
 		loadingMu.Lock()
 		loading = false
 		loadingMu.Unlock()
@@ -393,7 +408,6 @@ func PublishClipboard() {
 
 	topic := fmt.Sprintf("users/%s/notes", clientID)
 	filename := fmt.Sprintf("clipboard%s", ext)
-	log.Println(filename)
 
 	if bleState {
 		ble.Publish([]byte(content), mimeType, filename)
@@ -428,7 +442,8 @@ func PublishFile() {
 
 	fileBytes, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Printf("Failed to read file: %v", err)
+		Notification("Could not read file")
+
 		loadingMu.Lock()
 		loading = false
 		loadingMu.Unlock()
@@ -516,6 +531,7 @@ func DownloadRecent() {
 
 	// Write out file
 	if err := os.WriteFile(savePath, data, 0644); err != nil {
+		Notification("Failed to write file")
 		log.Printf("Failed to write file: %v", err)
 	} else {
 		log.Printf("Saved recent note to %s", savePath)
@@ -546,6 +562,7 @@ func CopyRecentToClipboard() {
 	}
 
 	if err := clipboard.Write(data, ctype); err != nil {
+		Notification("Couldn't copy to clipboard")
 		log.Println("Couldn't copy to clipboard")
 	}
 }
@@ -569,4 +586,34 @@ func handleOriginalDeletion() {
 			break
 		}
 	}
+}
+
+func Notification(message string) {
+	var iconPath string
+
+	switch runtime.GOOS {
+	case "windows":
+		iconPath = writeTempIcon("hoppy.ico", defaultIconWindows)
+	case "darwin":
+		iconPath = writeTempIcon("hoppy.png", defaultIconMacOS)
+	case "linux":
+		iconPath = ""
+	default:
+		iconPath = ""
+	}
+
+	if iconPath != "" {
+		os.Remove(iconPath)
+	}
+
+	beeep.Notify("HoppyShare", message, iconPath)
+}
+
+func writeTempIcon(filename string, iconData []byte) string {
+	tmpPath := filepath.Join(os.TempDir(), filename)
+	err := os.WriteFile(tmpPath, iconData, 0644)
+	if err != nil {
+		return ""
+	}
+	return tmpPath
 }

@@ -35,5 +35,5 @@ def change_settings(uid, device_id, new_settings):
     settings = query.get("json", {}).get("devices", [])
 
     res = pub_settings(settings, uid)
-
+    
     return res
