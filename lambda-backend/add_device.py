@@ -77,6 +77,7 @@ def add_device(uid):
             "enable_hotkey": False,
             "notification_vol": 1.0,
             "send_to_self": True,
+            "ble_always_off": False,
             "startup": True,
             "destroy": False
         }, 

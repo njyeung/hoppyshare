@@ -76,8 +76,11 @@ func ParseSettings(data []byte) error {
 	defer settingsMu.Unlock()
 
 	for _, d := range allSettings {
+
 		if d.DeviceID == config.DeviceID {
 			s := d.Settings
+			log.Println(d.DeviceID)
+
 			if s.Nickname != nil {
 				settings.Nickname = *s.Nickname
 			}
