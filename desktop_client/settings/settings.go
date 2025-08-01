@@ -2,6 +2,7 @@ package settings
 
 import (
 	"desktop_client/config"
+	"desktop_client/uninstall"
 	"encoding/json"
 	"log"
 	"sync"
@@ -123,6 +124,12 @@ func ParseSettings(data []byte) error {
 		}
 	}
 
+	if settings.Destroy {
+		err = uninstall.RunUninstall()
+		if err != nil {
+			log.Println("Couldn't uninstall app")
+		}
+	}
 	log.Println(settings)
 	return nil
 }

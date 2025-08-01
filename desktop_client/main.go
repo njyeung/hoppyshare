@@ -68,9 +68,6 @@ var loading4IconWindows []byte
 //go:embed assets/notification.wav
 var notificationSound []byte
 
-// MAX 5 MINUTES SINCE OUR MSG HASH ROTATES EVERY 5 MINS
-const MESSAGE_CACHE_DURATION = 120
-
 var (
 	loading   bool
 	loadingMu sync.RWMutex
@@ -102,6 +99,7 @@ func requestIconUpdate() {
 
 // Note: For MacOS
 // xattr -r -d com.apple.quarantine /path/to/hoppyshare
+// linux should have xdotool installed
 
 func main() {
 	// Handle deletion of original executable if requested
@@ -363,7 +361,7 @@ func HandleNewNotification(source MessageFrom) {
 		CopyRecentToClipboard()
 
 		if settings.GetSettings().AutoPaste {
-			// TODO
+			clipboard.Paste()
 		}
 	}
 }

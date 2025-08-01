@@ -5,6 +5,7 @@ package clipboard
 import (
 	"bytes"
 	"errors"
+	"log"
 	"os/exec"
 )
 
@@ -100,4 +101,13 @@ func writeClipboard(data []byte, mimeType string) error {
 	}
 
 	return errors.New("no clipboard tool found, tried wl-copy and xclip")
+}
+
+func pasteClipboard() error {
+	err := exec.Command("xdotool", "key", "--clearmodifiers", "ctrl+v").Run()
+	if err != nil {
+		log.Println("failed to paste clipboard, make sure you have xdotool installed")
+	}
+
+	return nil
 }
