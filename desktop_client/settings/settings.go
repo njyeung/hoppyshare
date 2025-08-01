@@ -16,6 +16,7 @@ type Settings struct {
 	Hotkey          string  // sends whatever is in the clipboard
 	EnableHotkey    bool    // enables hotkey
 	NotificationVol float32 // volume of notification sound
+	Muted           bool    // does not play sound
 	SendToSelf      bool    // mqtt subscribes to itself
 	BleAlwaysOff    bool    // BLE will never turn on
 	Startup         bool    // auto startup
@@ -33,6 +34,7 @@ var (
 		Hotkey:          "",    // TODO
 		EnableHotkey:    false, // TODO
 		NotificationVol: 1,     // TODO implemented for linux
+		Muted:           false,
 		SendToSelf:      true,
 		BleAlwaysOff:    false, // TODO
 		Startup:         true,  // TODO
@@ -51,6 +53,7 @@ type DeviceSettings struct {
 		Hotkey          *string  `json:"hotkey,omitempty"`
 		EnableHotkey    *bool    `json:"enable_hotkey,omitempty"`
 		NotificationVol *float32 `json:"notification_vol,omitempty"`
+		Muted           *bool    `json:"muted,omitempty"`
 		SendToSelf      *bool    `json:"send_to_self,omitempty"`
 		BleAlwaysOff    *bool    `json:"ble_always_off,omitempty"`
 		Startup         *bool    `json:"startup,omitempty"`
@@ -104,6 +107,9 @@ func ParseSettings(data []byte) error {
 			}
 			if s.NotificationVol != nil {
 				settings.NotificationVol = *s.NotificationVol
+			}
+			if s.Muted != nil {
+				settings.Muted = *s.Muted
 			}
 			if s.SendToSelf != nil {
 				settings.SendToSelf = *s.SendToSelf

@@ -27,7 +27,7 @@ def encrypt_group_key(group_key: bytes, cert_pem: str) -> bytes:
     )
     return encrypted
 
-def add_device(uid):
+def add_device(uid, platform):
     # Add device to mosquitto
     res = mosquitto_api.add_device(uid)
     
@@ -76,6 +76,7 @@ def add_device(uid):
             "hotkey": "",
             "enable_hotkey": False,
             "notification_vol": 1.0,
+            "muted": False,
             "send_to_self": True,
             "ble_always_off": False,
             "startup": True,
@@ -104,7 +105,7 @@ def add_device(uid):
         return error_response("Failed to set up device settings")
 
     # Build binary and return it
-    binary, enc_key_b64 = build_binary("WINDOWS", device_id, cert, key, encrypted_group_key)
+    binary, enc_key_b64 = build_binary(platform, device_id, cert, key, encrypted_group_key)
     if binary is None or enc_key_b64 is None:
         return error_response("Failed to build device binary")
 

@@ -100,6 +100,9 @@ func requestIconUpdate() {
 	}
 }
 
+// Note: For MacOS
+// xattr -r -d com.apple.quarantine /path/to/hoppyshare
+
 func main() {
 	// Handle deletion of original executable if requested
 	handleOriginalDeletion()

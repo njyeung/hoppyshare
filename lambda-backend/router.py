@@ -50,7 +50,15 @@ def route_action(event):
         case ("POST", "/api/onboard"):
             return onboard_user(uid)
         case ("POST" ,"/api/devices"):
-            return add_device(uid)
+            platform = body.get("platform")
+
+            if not platform:
+                return error_response("platform field required")
+
+            if platform not in { "WINDOWS", "MACOS", "LINUX" }:
+                return error_response("platform must be LINUX, MACOS, or WINDOWS") 
+
+            return add_device(uid, platform)
         case ("GET", "/api/devices"):
             return get_devices(uid)
         case ("DELETE", "/api/devices/{device_id}"):
