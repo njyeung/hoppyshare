@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from "@/components/Navbar";
 import DeviceAccordion from "@/components/DeviceAccordion";
 import { Device, DeviceSettings } from "@/types/device";
+import { useApiQuery } from "@/lib/api";
 
 export default function Dashboard() {
   const [devices, setDevices] = useState<Device[]>([
@@ -63,6 +64,16 @@ export default function Dashboard() {
     }
   ]);
 
+  // Just test the query and log to console
+  const { data: apiDevices, isLoading, error } = useApiQuery<Device[]>(
+    ['devices'],
+    'https://en43r23fua.execute-api.us-east-2.amazonaws.com/prod/api/devices'
+  );
+
+  useEffect(() => {
+    console.log('API Query Results:', { apiDevices, isLoading, error });
+  }, [apiDevices, isLoading, error]);
+
   const handleSettingsChange = (deviceId: string, newSettings: DeviceSettings) => {
     setDevices(devices.map(device => 
       device.deviceid === deviceId 
@@ -73,7 +84,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <Navbar></Navbar>
+      <Navbar />
       <section className="w-full bg-white min-h-screen flex justify-center">
         <div className="container mt-24 px-3 md:px-12 lg:px-28">
           <div className="flex justify-between items-end mb-4">

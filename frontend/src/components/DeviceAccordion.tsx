@@ -199,7 +199,7 @@ export default function DeviceAccordion({ device, onSettingsChange }: DeviceAcco
               Delete Device
             </button>
             <p className="text-xs text-secondary-muted mt-2 text-center">
-              The device will be permanently removed from your account. The HoppyShare client will gracefully remove itself from your device.
+              This action cannot be undone. The device will be permanently removed from your account and the HoppyShare client will gracefully remove itself from your device.
             </p>
           </div>
         </div>
