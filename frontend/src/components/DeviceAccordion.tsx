@@ -3,35 +3,34 @@
 import { useState } from 'react';
 import { Device, DeviceSettings } from '@/types/device';
 import Switch from '@/components/Switch';
-import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 interface DeviceAccordionProps {
   device: Device;
   onSettingsChange?: (deviceId: string, settings: DeviceSettings) => void;
+  onDeleteRequest?: (device: Device) => void;
 }
 
-export default function DeviceAccordion({ device, onSettingsChange }: DeviceAccordionProps) {
+export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequest }: DeviceAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [settings, setSettings] = useState(device.settings);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleSettingChange = (key: keyof DeviceSettings, value: any) => {
+    // Enforce cache_time maximum of 300 seconds (5 minutes)
+    if (key === 'cache_time') {
+      value = Math.min(Math.max(1, value), 300);
+    }
+    
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
-    onSettingsChange?.(device.deviceid, newSettings);
+  };
+
+  const handleSaveChanges = () => {
+    console.log('Saving settings for device:', device.deviceid, settings);
+    onSettingsChange?.(device.deviceid, settings);
   };
 
   const handleDeleteClick = () => {
-    setShowDeleteModal(true);
-  };
-
-  const handleDeleteConfirm = () => {
-    handleSettingChange('destroy', true);
-    setShowDeleteModal(false);
-  };
-
-  const handleDeleteCancel = () => {
-    setShowDeleteModal(false);
+    onDeleteRequest?.(device);
   };
 
   return (
@@ -81,6 +80,9 @@ export default function DeviceAccordion({ device, onSettingsChange }: DeviceAcco
                 onChange={(e) => handleSettingChange('nickname', e.target.value)}
                 className="w-full px-3 py-2 border border-secondary-darker rounded-lg text-secondary-dark focus:outline-none focus:ring-2 focus:ring-secondary"
               />
+              <p className="text-xs text-secondary-muted mt-1">
+                Custom name to identify this device
+              </p>
             </div>
 
             <div>
@@ -94,6 +96,9 @@ export default function DeviceAccordion({ device, onSettingsChange }: DeviceAcco
                 placeholder="e.g., Cmd+Shift+V"
                 className="w-full px-3 py-2 border border-secondary-darker text-secondary-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary"
               />
+              <p className="text-xs text-secondary-muted mt-1">
+                Keyboard shortcut to send clipboard contents
+              </p>
             </div>
 
             <div>
@@ -102,10 +107,15 @@ export default function DeviceAccordion({ device, onSettingsChange }: DeviceAcco
               </label>
               <input
                 type="number"
+                min="1"
+                max="300"
                 value={settings.cache_time}
                 onChange={(e) => handleSettingChange('cache_time', parseInt(e.target.value))}
                 className="w-full px-3 py-2 border border-secondary-darker text-secondary-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary"
               />
+              <p className="text-xs text-secondary-muted mt-1">
+                How long to keep clipboard items in memory. Max 5 mins.
+              </p>
             </div>
 
             <div>
@@ -120,6 +130,9 @@ export default function DeviceAccordion({ device, onSettingsChange }: DeviceAcco
                 onChange={(e) => handleSettingChange('notification_vol', parseInt(e.target.value) / 100)}
                 className="w-full px-3 py-2 border border-secondary-darker text-secondary-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary"
               />
+              <p className="text-xs text-secondary-muted mt-1">
+                Volume level for clipboard sync notifications
+              </p>
             </div>
           </div>
 
@@ -180,37 +193,33 @@ export default function DeviceAccordion({ device, onSettingsChange }: DeviceAcco
               description="Automatically starts HoppyShare client when this system boots"
             />
 
-            <div className="flex flex-col sm:flex-row justify-between items-end gap-2 mt-7">
-              <button className="rounded-lg bg-secondary hover:bg-secondary-dark transition-all p-2 text-white w-[200px]">
+            <div className="flex flex-col justify-between items-center gap-3 mt-7">
+              <button 
+                onClick={handleSaveChanges}
+                className="rounded-lg bg-secondary-light hover:bg-secondary transition-all p-3 text-white w-full max-w-[400px] font-medium"
+              >
                 Save Changes
               </button>
-              <div className="text-xs text-secondary-muted">
+              <div className="text-xs text-secondary-muted text-end w-full">
                 Device ID: {device.deviceid}
               </div>
             </div>
           </div>
 
-          <div className="mt-6 pt-6 pb-2 border-t border-secondary-dark items-center flex flex-col">
+          <div className="mt-6 pt-6 pb-2 border-t border-secondary-dark">
             <button
               type="button"
               onClick={handleDeleteClick}
-              className="w-full max-w-[400px] px-4 py-2 bg-secondary-dark hover:bg-secondary-darker text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-secondary-dark font-medium"
+              className="px-6 py-2 bg-secondary-dark hover:bg-secondary-darker text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-secondary-dark text-sm"
             >
               Delete Device
             </button>
-            <p className="text-xs text-secondary-muted mt-2 text-center">
+            <p className="text-xs text-secondary-muted mt-2">
               This action cannot be undone. The device will be permanently removed from your account and the HoppyShare client will gracefully remove itself from your device.
             </p>
           </div>
         </div>
       </div>
-      
-      <DeleteConfirmModal
-        isOpen={showDeleteModal}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        deviceName={settings.nickname}
-      />
     </div>
   );
 }

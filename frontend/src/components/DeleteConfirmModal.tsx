@@ -9,7 +9,7 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, deviceN
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-secondary-darker bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-secondary-darker bg-opacity-50 flex items-center justify-center z-[9999]">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
         <h3 className="text-lg font-bold text-secondary-darker mb-4">
           Delete Device

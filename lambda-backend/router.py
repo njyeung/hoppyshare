@@ -16,18 +16,31 @@ def route_action(event):
     body = json.loads(event["body"]) if event.get("body") else {}
     pathParameters = event.get("pathParameters", {})
 
-    # Route for supabase webhook
-    # match action:
-    #     case "onboard_user":
-    #         auth_header = headers.get("Authorization")
-    #         if auth_header != f"Bearer {['SUPABASE_SERVICE_SECRET']}":
-    #             return forbidden_response("Invalid service token")
-            
-    #         uid = body.get("uid")
-    #         if not uid:
-    #             return error_response("Missing uid")
+    # Debug: Log all incoming requests
+    print(f"DEBUG - Method: {method}, Path: {path}")
+    print(f"DEBUG - Full event: {json.dumps(event, indent=2)}")
 
-    #         return onboard_user(uid)
+    # Route for supabase webhook
+    if method == "POST" and path == "/api/onboard":
+        print(f"Webhook received - Method: {method}, Path: {path}")
+        print(f"All headers: {headers}")
+        print(f"Body: {body}")
+        
+        auth_header = headers.get("Auth") or headers.get("auth")
+        print(f"Auth header: {auth_header}")
+        print(f"Expected: {SUPABASE_SERVICE_SECRET}")
+        
+        if auth_header != SUPABASE_SERVICE_SECRET:
+            return forbidden_response("Invalid service token")
+        
+        # Supabase sends user data in webhook payload
+        user_data = body.get("record", {})
+        uid = user_data.get("id")
+        
+        if not uid:
+            return error_response("Missing user ID in webhook payload")
+        
+        return onboard_user(uid)
 
     # Public routes
 

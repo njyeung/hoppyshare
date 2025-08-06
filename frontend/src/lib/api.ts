@@ -20,7 +20,6 @@ export async function makeAuthenticatedRequest(url: string, options: RequestInit
   })
 }
 
-// Basic API functions
 export async function apiGet(endpoint: string) {
   return makeAuthenticatedRequest(endpoint, { method: 'GET' })
 }

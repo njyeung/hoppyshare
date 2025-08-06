@@ -264,7 +264,7 @@ func pasteClipboard() error {
 	err := exec.Command("powershell", "-Command", cmd).Run()
 
 	if err != nil {
-		return error.New("failed to paste clipboard")
+		return errors.New("failed to paste clipboard")
 	}
 
 	return nil
