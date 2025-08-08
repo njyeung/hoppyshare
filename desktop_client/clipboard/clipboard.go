@@ -9,8 +9,3 @@ func Read() ([]byte, string, error) {
 func Write(data []byte, mimeType string) error {
 	return writeClipboard(data, mimeType)
 }
-
-// Simulates Cmd + V on MacOS, Ctrl + V on Windows and Linux
-func Paste() error {
-	return pasteClipboard()
-}

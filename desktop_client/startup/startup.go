@@ -172,3 +172,27 @@ func registerStartup(path string) error {
 
 	return app.Enable()
 }
+
+// EnableStartup enables startup for the current executable location
+func EnableStartup() error {
+	exe, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	exe, err = filepath.Abs(exe)
+	if err != nil {
+		return err
+	}
+	
+	return registerStartup(exe)
+}
+
+// DisableStartup disables startup for HoppyShare
+func DisableStartup() error {
+	app := &autostart.App{
+		Name:        "HoppyShare",
+		DisplayName: "HoppyShare",
+	}
+
+	return app.Disable()
+}

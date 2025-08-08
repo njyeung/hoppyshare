@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"desktop_client/config"
+	"desktop_client/notification"
 	"desktop_client/settings"
 	"desktop_client/systrayhelpers"
 	_ "embed"
@@ -129,17 +130,19 @@ func Subscribe(client mqtt.Client) {
 
 		cacheMsg(decoded.Filename, decoded.Type, decoded.Payload)
 
-		// log.Printf("[NOTES] Received %s (%s), %d bytes", decoded.Filename, decoded.Type, len(decoded.Payload))
+		log.Printf("[NOTES] Received %s (%s), %d bytes", decoded.Filename, decoded.Type, len(decoded.Payload))
 	}); token.Wait() && token.Error() != nil {
-		// log.Printf("Subscribe error (notes): %v", token.Error())
+		notification.Notification("Error: Could not subscribe to server")
+		log.Printf("Subscribe error (notes): %v", token.Error())
 	}
 
 	if token := client.Subscribe(settingsTopic, 1, func(client mqtt.Client, m mqtt.Message) {
-		// log.Printf("[SETTINGS] %s: %s", m.Topic(), string(m.Payload()))
+		log.Printf("[SETTINGS] %s: %s", m.Topic(), string(m.Payload()))
 
 		settings.ParseSettings(m.Payload())
+
 	}); token.Wait() && token.Error() != nil {
-		// log.Printf("Subscribe error (settings): %v", token.Error())
+		notification.Notification("Error: Could not subscribe to server")
 	}
 }
 
@@ -189,18 +192,20 @@ func Publish(topic string, data []byte, contentType, filename string) error {
 	encoded, err := EncodeMessage(contentType, filename, config.DeviceID, data)
 
 	if err != nil {
-		log.Printf("Failed to encode message")
+		notification.Notification("Fatal: Failed to encode message")
 	}
 
 	token := client.Publish(topic, 1, false, encoded)
 
 	ok := token.WaitTimeout(10 * time.Second)
 	if !ok {
+		notification.Notification("Error: Publish timeout reached")
 		return fmt.Errorf("cannot publish: client not connected")
 	}
 
 	if err := token.Error(); err != nil {
-		log.Printf("Publish error %v", err)
+		notification.Notification("Error: Could not publish")
+		return err
 	} else {
 		log.Printf("Published %s (%s)", filename, contentType)
 	}

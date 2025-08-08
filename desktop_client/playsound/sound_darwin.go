@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-func play(sound []byte, vol float32) {
+func play(sound []byte) {
 	tmpPath := filepath.Join(os.TempDir(), "notification.wav")
 	os.WriteFile(tmpPath, sound, 0644)
 	exec.Command("afplay", tmpPath).Run()

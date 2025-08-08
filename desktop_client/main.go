@@ -6,6 +6,7 @@ import (
 	"desktop_client/config"
 	"desktop_client/connectivity"
 	"desktop_client/mqttclient"
+	"desktop_client/notification"
 	"desktop_client/playsound"
 	"desktop_client/settings"
 	"desktop_client/startup"
@@ -21,7 +22,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gen2brain/beeep"
 	"github.com/getlantern/systray"
 	"github.com/sqweek/dialog"
 )
@@ -68,6 +68,9 @@ var loading4IconWindows []byte
 //go:embed assets/notification.wav
 var notificationSound []byte
 
+// MAX 5 MINUTES SINCE OUR MSG HASH ROTATES EVERY 5 MINS
+const MESSAGE_CACHE_DURATION = 120
+
 var (
 	loading   bool
 	loadingMu sync.RWMutex
@@ -97,28 +100,26 @@ func requestIconUpdate() {
 	}
 }
 
-// Note: For MacOS
-// xattr -r -d com.apple.quarantine /path/to/hoppyshare
-// linux should have xdotool installed
-
 func main() {
-	// Handle deletion of original executable if requested
+	// Delete original executable if requested flags are passed
 	handleOriginalDeletion()
+
+	if os.Getenv("DEV_MODE") == "1" {
+		notification.Notification("DEVMODE = 1, loading dev certs and keys")
+		config.LoadDevFiles()
+	} else {
+		err = startup.Initial()
+		if err != nil {
+			notification.Notification("Fatal: Could not run startup script")
+			log.Fatalf("Could not run startup script: %v", err)
+		}
+	}
 
 	go func() {
 		for op := range bleOps {
 			op()
 		}
 	}()
-
-	if os.Getenv("DEV_MODE") == "1" {
-		config.LoadDevFiles()
-	} else {
-		err = startup.Initial()
-		if err != nil {
-			log.Fatalf("Could not run startup script: %v", err)
-		}
-	}
 
 	connectivity.Start()
 
@@ -139,6 +140,7 @@ func main() {
 		mqttclient.Disconnect()
 		clientID, err = mqttclient.Connect()
 		if err != nil {
+			notification.Notification("Error: Reconnect failed after wake")
 			log.Printf("Reconnect failed after wake: %v", err)
 		}
 	})
@@ -230,6 +232,7 @@ func onReady() {
 			var err error
 			clientID, err = mqttclient.Connect()
 			if err != nil {
+				notification.Notification("Error: Could not restart MQTT client")
 				log.Printf("Reconnect error: %v", err)
 			}
 		}
@@ -355,13 +358,11 @@ func HandleNewNotification(source MessageFrom) {
 
 	playsound.Play(notificationSound)
 
-	Notification("New Message")
-
 	if settings.GetSettings().AutoCopy {
 		CopyRecentToClipboard()
 
 		if settings.GetSettings().AutoPaste {
-			clipboard.Paste()
+			// TODO
 		}
 	}
 }
@@ -396,7 +397,7 @@ func PublishClipboard() {
 	content, mimeType, err := clipboard.Read()
 
 	if err != nil {
-		Notification("Could not read clipboard contents")
+		notification.Notification("Could not read clipboard contents: " + err.Error())
 
 		loadingMu.Lock()
 		loading = false
@@ -443,7 +444,11 @@ func PublishFile() {
 
 	fileBytes, err := os.ReadFile(filePath)
 	if err != nil {
-		Notification("Could not read file")
+		notifyErr := notification.Notification("Could not read file: " + err.Error())
+		if notifyErr != nil {
+			log.Printf("Failed to read file")
+			log.Println("Notification error:", notifyErr)
+		}
 
 		loadingMu.Lock()
 		loading = false
@@ -532,7 +537,6 @@ func DownloadRecent() {
 
 	// Write out file
 	if err := os.WriteFile(savePath, data, 0644); err != nil {
-		Notification("Failed to write file")
 		log.Printf("Failed to write file: %v", err)
 	} else {
 		log.Printf("Saved recent note to %s", savePath)
@@ -563,7 +567,6 @@ func CopyRecentToClipboard() {
 	}
 
 	if err := clipboard.Write(data, ctype); err != nil {
-		Notification("Couldn't copy to clipboard")
 		log.Println("Couldn't copy to clipboard")
 	}
 }
@@ -587,34 +590,4 @@ func handleOriginalDeletion() {
 			break
 		}
 	}
-}
-
-func Notification(message string) {
-	var iconPath string
-
-	switch runtime.GOOS {
-	case "windows":
-		iconPath = writeTempIcon("hoppy.ico", defaultIconWindows)
-	case "darwin":
-		iconPath = writeTempIcon("hoppy.png", defaultIconMacOS)
-	case "linux":
-		iconPath = ""
-	default:
-		iconPath = ""
-	}
-
-	if iconPath != "" {
-		os.Remove(iconPath)
-	}
-
-	beeep.Notify("HoppyShare", message, iconPath)
-}
-
-func writeTempIcon(filename string, iconData []byte) string {
-	tmpPath := filepath.Join(os.TempDir(), filename)
-	err := os.WriteFile(tmpPath, iconData, 0644)
-	if err != nil {
-		return ""
-	}
-	return tmpPath
 }

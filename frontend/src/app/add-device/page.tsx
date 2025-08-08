@@ -39,6 +39,20 @@ export default function AddDevice() {
     setSelectedPlatform(platform);
   };
 
+  async function downloadAndRename(url: string, filename: string) {
+    const response = await fetch(url)
+    if (!response.ok) throw new Error("Failed to fetch blob");
+
+    const blob = await response.blob();
+    
+    const blobUrl = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = blobUrl
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+  }
+
   const handleAddDevice = async () => {
     if (!selectedPlatform) return;
 
@@ -53,22 +67,13 @@ export default function AddDevice() {
       }
       
       const responseData = await response.json();
-      console.log('Add device API response:', responseData);
       
       // Download the binary with proper filename
       if (responseData.download_url) {
         const downloadUrl = responseData.download_url;
         const filename = getFilenameForPlatform(selectedPlatform);
         
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = filename;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        console.log(`Downloaded ${filename} to Downloads folder`);
+        downloadAndRename(downloadUrl, filename)
       }
       
       // Redirect back to dashboard after download starts
@@ -104,13 +109,11 @@ export default function AddDevice() {
             <h3 className="text-lg font-semibold text-secondary-darker mb-4">MacOS Setup Instructions</h3>
             <ol className="list-decimal list-inside space-y-2 text-secondary-dark">
               <li>Download the HoppyShare client for macOS</li>
-              <li>Extract the downloaded file to your Applications folder</li>
-              <li>Open Terminal and run the following command to remove quarantine:</li>
-              <div className="bg-gray-800 text-green-400 p-3 rounded mt-2 font-mono text-sm">
-                xattr -d com.apple.quarantine /Applications/HoppyShare.app
+              <li>Open Terminal to the downloaded directory and remove quarantine:</li>
+              <div className="bg-gray-800 mb-4 text-green-400 p-3 rounded mt-2 font-mono text-sm">
+                xattr -d com.apple.quarantine ./HoppyShare
               </div>
-              <li>Launch HoppyShare from your Applications folder</li>
-              <li>Allow any system permissions when prompted</li>
+              <li>The application will start and appear in your system tray</li>
             </ol>
           </div>
         );
@@ -122,14 +125,16 @@ export default function AddDevice() {
               <li>Download the HoppyShare client for Linux</li>
               <li>Extract the downloaded file to a directory of your choice</li>
               <li>Make the binary executable:</li>
-              <div className="bg-gray-800 text-green-400 p-3 rounded mt-2 font-mono text-sm">
+              <div className="bg-gray-800 mb-4 text-green-400 p-3 rounded mt-2 font-mono text-sm">
                 chmod +x hoppyshare
               </div>
               <li>Run the application:</li>
-              <div className="bg-gray-800 text-green-400 p-3 rounded mt-2 font-mono text-sm">
+              <div className="bg-gray-800 mb-4 text-green-400 p-3 rounded mt-2 font-mono text-sm">
                 ./hoppyshare
               </div>
-              <li>The application will start in the background</li>
+              <li>The application will start and appear in your system tray</li>
+              <p className='pl-7 text-sm text-primary-muted'>Note: System tray support requires a desktop environment like GNOME, KDE, or XFCE. Window managers like Hyprland may not display the system tray icon.</p>
+
             </ol>
           </div>
         );
@@ -139,11 +144,17 @@ export default function AddDevice() {
             <h3 className="text-lg font-semibold text-secondary-darker mb-4">Windows Setup Instructions</h3>
             <ol className="list-decimal list-inside space-y-2 text-secondary-dark">
               <li>Download the HoppyShare client for Windows</li>
-              <li>Rename the .bin file to .exe</li>
-              <li>Double click to run the app</li>
-              <li>If Windows Defender warns about the app, click "More info" then "Run anyway"</li>
+              <li>Right click and run the app as administrator</li>
+              <p className='pl-7 mb-4 text-sm text-primary-muted'>The binary requires admin permissions to relocate itself and register for startup</p>
               <li>The application will start and appear in your system tray</li>
             </ol>
+            <div className="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+              <h4 className="font-semibold text-yellow-800 mb-2">Common Issue: Antivirus Detection</h4>
+              <p className="text-yellow-700 text-xs">
+                If the downloaded file disappears or you don't see the system tray icon, your antivirus software may have quarantined the file. 
+                While Windows Defender typically allows it, third-party antivirus software may flag it as suspicious.
+              </p>
+            </div>
           </div>
         );
       default:
@@ -239,10 +250,10 @@ export default function AddDevice() {
             )}
 
             {/* Action Buttons */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-12">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="px-6 py-2 hover:underline text-secondary-dark hover:text-secondary-darker transition-colors"
+                className="px-4 py-2 rounded-lg bg-primary-muted/40 hover:underline text-white transition-colors"
               >
                 Back to Dashboard
               </button>
@@ -250,7 +261,7 @@ export default function AddDevice() {
               <button
                 onClick={handleAddDevice}
                 disabled={!selectedPlatform || isLoading}
-                className={`px-8 py-3 rounded-lg font-medium transition-all ${
+                className={`px-8 py-3 rounded-lg transition-all ${
                   selectedPlatform && !isLoading
                     ? 'bg-secondary hover:bg-secondary-dark text-white'
                     : 'bg-primary text-secondary-darker cursor-not-allowed'

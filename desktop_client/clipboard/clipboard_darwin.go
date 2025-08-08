@@ -118,7 +118,6 @@ import "C"
 
 import (
 	"errors"
-	"os/exec"
 	"unsafe"
 )
 
@@ -153,14 +152,5 @@ func writeClipboard(data []byte, mimeType string) error {
 	if res != 0 {
 		return errors.New("failed to write to clipboard")
 	}
-	return nil
-}
-
-func pasteClipboard() error {
-	err := exec.Command("osascript", "-e", `tell application "System Events" to keystroke "v" using {command down}`).Run()
-	if err != nil {
-		return errors.New("failed to paste clipboard")
-	}
-
 	return nil
 }

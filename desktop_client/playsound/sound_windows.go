@@ -4,28 +4,31 @@
 package playsound
 
 import (
-	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"syscall"
+	"unsafe"
 )
 
-func play(sound []byte, vol float32) {
+var (
+	winmm          = syscall.NewLazyDLL("winmm.dll")
+	procPlaySoundW = winmm.NewProc("PlaySoundW")
+)
+
+const (
+	SND_FILENAME = 0x00020000
+	SND_ASYNC    = 0x00000001
+)
+
+func play(sound []byte) {
 	tmpPath := filepath.Join(os.TempDir(), "notification.wav")
 	os.WriteFile(tmpPath, sound, 0644)
 
-	volume := int(vol * 100) // WMPlayer expects 0–100
+	pathPtr, _ := syscall.UTF16PtrFromString(tmpPath)
 
-	psScript := `
-		$player = New-Object -ComObject WMPlayer.OCX
-		$media = $player.newMedia("` + tmpPath + `")
-		$player.settings.volume = ` + fmt.Sprintf("%d", volume) + `
-		$player.controls.play()
-		while ($player.playState -ne 1) { Start-Sleep -Milliseconds 100 }
-		`
-
-	cmd := exec.Command("powershell", "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden",
-		"-Command", psScript)
-
-	cmd.Run()
+	procPlaySoundW.Call(
+		uintptr(unsafe.Pointer(pathPtr)),
+		0,
+		SND_FILENAME|SND_ASYNC,
+	)
 }

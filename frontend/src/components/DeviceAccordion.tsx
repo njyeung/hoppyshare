@@ -3,19 +3,23 @@
 import { useState } from 'react';
 import { Device, DeviceSettings } from '@/types/device';
 import Switch from '@/components/Switch';
+import { apiPut } from '@/lib/api';
+import BunnyEars from '@/components/svg/BunnyEars';
 
 interface DeviceAccordionProps {
   device: Device;
   onSettingsChange?: (deviceId: string, settings: DeviceSettings) => void;
   onDeleteRequest?: (device: Device) => void;
+  isExpanded?: boolean;
+  onToggleExpansion?: (deviceId: string) => void;
 }
 
-export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequest }: DeviceAccordionProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequest, isExpanded = false, onToggleExpansion }: DeviceAccordionProps) {
   const [settings, setSettings] = useState(device.settings);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSettingChange = (key: keyof DeviceSettings, value: any) => {
-    // Enforce cache_time maximum of 300 seconds (5 minutes)
+    // cache_time max of 300 seconds (5 minutes)
     if (key === 'cache_time') {
       value = Math.min(Math.max(1, value), 300);
     }
@@ -24,9 +28,30 @@ export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequ
     setSettings(newSettings);
   };
 
-  const handleSaveChanges = () => {
-    console.log('Saving settings for device:', device.deviceid, settings);
-    onSettingsChange?.(device.deviceid, settings);
+  const handleSaveChanges = async () => {
+    try {
+      setIsSaving(true);
+      console.log('Saving settings for device:', device.deviceid, settings);
+      
+      const response = await apiPut(`https://en43r23fua.execute-api.us-east-2.amazonaws.com/prod/api/settings/${device.deviceid}`, {
+        new_settings: settings
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
+      
+      const responseData = await response.json();
+      console.log('Settings saved successfully:', responseData);
+      
+      // Call the parent callback if provided
+      onSettingsChange?.(device.deviceid, settings);
+      
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDeleteClick = () => {
@@ -36,12 +61,14 @@ export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequ
   return (
     <div className="border border-secondary-dark rounded-lg mb-3 bg-white transition-all duration-300 ease-in-out">
       <div 
-        className={`flex items-center justify-between p-4 cursor-pointer transition-all duration-200 ${
+        className={`relative flex items-center justify-between p-4 cursor-pointer transition-all duration-200 overflow-hidden ${
           isExpanded ? 'bg-primary-light/40' : 'hover:bg-primary-light/20'
         }`}
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => onToggleExpansion?.(device.deviceid)}
       >
-        <div className="flex items-center space-x-3">
+        
+
+        <div className="flex items-center space-x-3 relative z-10">
           <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
             settings.enabled ? 'bg-primary' : 'bg-primary-muted'
           }`} />
@@ -52,7 +79,7 @@ export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequ
         
         {/* Arrow */}
         <svg 
-          className={`w-5 h-5 text-secondary-muted transition-all duration-300 ease-in-out ${
+          className={`w-5 h-5 text-secondary-muted transition-all duration-300 ease-in-out relative z-10 ${
             isExpanded ? 'rotate-180' : ''
           }`}
           fill="none" 
@@ -69,6 +96,12 @@ export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequ
         <div className={`border-t border-secondary-dark p-4 transition-all duration-300 delay-75 ${
           isExpanded ? 'translate-y-0 opacity-100' : 'translate-y-[-10px] opacity-0'
         }`}>
+          {/* Bunny Ears Background */}
+          <BunnyEars inside="#de94a1" 
+          className='opacity-30 -rotate-12 -z-10
+          scale-200 -bottom-2 right-6 
+          sm:scale-[300%] sm:bottom-0 sm:right-16 
+          md:scale-[400%] md:bottom-6 md:right-28' />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm text-secondary-darker mb-1">
@@ -86,22 +119,6 @@ export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequ
             </div>
 
             <div>
-              <label className="text-sm text-secondary-darker mb-1">
-                Hotkey
-              </label>
-              <input
-                type="text"
-                value={settings.hotkey}
-                onChange={(e) => handleSettingChange('hotkey', e.target.value)}
-                placeholder="e.g., Cmd+Shift+V"
-                className="w-full px-3 py-2 border border-secondary-darker text-secondary-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary"
-              />
-              <p className="text-xs text-secondary-muted mt-1">
-                Keyboard shortcut to send clipboard contents
-              </p>
-            </div>
-
-            <div>
               <label className="block text-sm font-medium text-secondary-darker mb-1">
                 Cache Time (seconds)
               </label>
@@ -115,23 +132,6 @@ export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequ
               />
               <p className="text-xs text-secondary-muted mt-1">
                 How long to keep clipboard items in memory. Max 5 mins.
-              </p>
-            </div>
-
-            <div>
-              <label className="text-sm text-secondary-darker mb-1">
-                Notification Volume (0-100)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={Math.round(settings.notification_vol * 100)}
-                onChange={(e) => handleSettingChange('notification_vol', parseInt(e.target.value) / 100)}
-                className="w-full px-3 py-2 border border-secondary-darker text-secondary-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary"
-              />
-              <p className="text-xs text-secondary-muted mt-1">
-                Volume level for clipboard sync notifications
               </p>
             </div>
           </div>
@@ -155,14 +155,7 @@ export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequ
               checked={settings.auto_paste}
               onChange={(checked) => handleSettingChange('auto_paste', checked)}
               label="Auto Paste"
-              description="Automatically paste clipboard content when triggered"
-            />
-
-            <Switch
-              checked={settings.enable_hotkey}
-              onChange={(checked) => handleSettingChange('enable_hotkey', checked)}
-              label="Enable Hotkey"
-              description="Allow hotkey shortcuts to trigger clipboard actions"
+              description="Automatically paste clipboard (only when Auto Copy is on)"
             />
 
             <Switch
@@ -196,9 +189,14 @@ export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequ
             <div className="flex flex-col justify-between items-center gap-3 mt-7">
               <button 
                 onClick={handleSaveChanges}
-                className="rounded-lg bg-secondary-light hover:bg-secondary transition-all p-3 text-white w-full max-w-[400px] font-medium"
+                disabled={isSaving}
+                className={`rounded-lg transition-all p-3 text-white w-full max-w-[400px] font-medium ${
+                  isSaving 
+                    ? 'bg-primary text-white cursor-not-allowed' 
+                    : 'bg-secondary-light hover:bg-secondary'
+                }`}
               >
-                Save Changes
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
               <div className="text-xs text-secondary-muted text-end w-full">
                 Device ID: {device.deviceid}

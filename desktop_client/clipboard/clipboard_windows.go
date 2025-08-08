@@ -221,7 +221,6 @@ import "C"
 
 import (
 	"errors"
-	"os/exec"
 	"unsafe"
 )
 
@@ -256,16 +255,5 @@ func writeClipboard(data []byte, mimeType string) error {
 	if res != 0 {
 		return errors.New("failed to write to clipboard")
 	}
-	return nil
-}
-
-func pasteClipboard() error {
-	cmd := `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('^v')`
-	err := exec.Command("powershell", "-Command", cmd).Run()
-
-	if err != nil {
-		return errors.New("failed to paste clipboard")
-	}
-
 	return nil
 }

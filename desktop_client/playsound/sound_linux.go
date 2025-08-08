@@ -4,23 +4,21 @@
 package playsound
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 )
 
-func play(sound []byte, vol float32) {
+func play(sound []byte) {
 	tmpPath := filepath.Join(os.TempDir(), "notification.wav")
 	os.WriteFile(tmpPath, sound, 0644)
 
-	// Try paplay with vol
-	volumeInt := int32(vol * 65536)
-	cmd := exec.Command("paplay", "--volume", fmt.Sprintf("%d", volumeInt), tmpPath)
+	// Try paplay at full volume
+	cmd := exec.Command("paplay", tmpPath)
 	err := cmd.Run()
 
 	if err != nil {
-		// Fallback to aplay (no volume support)
+		// Fallback to aplay
 		exec.Command("aplay", tmpPath).Run()
 	}
 }
