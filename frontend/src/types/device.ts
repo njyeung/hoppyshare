@@ -4,9 +4,6 @@ export interface DeviceSettings {
   auto_copy: boolean;
   auto_paste: boolean;
   cache_time: number;
-  hotkey: string;
-  enable_hotkey: boolean;
-  notification_vol: number;
   muted: boolean;
   send_to_self: boolean;
   auto_ble: boolean;

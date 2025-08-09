@@ -73,12 +73,9 @@ def add_device(uid, platform):
             "auto_copy": False,
             "auto_paste": False,
             "cache_time": 30,
-            "hotkey": "",
-            "enable_hotkey": False,
-            "notification_vol": 1.0,
             "muted": False,
             "send_to_self": True,
-            "auto_ble": False,
+            "auto_ble": True,
             "startup": True,
             "destroy": False
         }, 
