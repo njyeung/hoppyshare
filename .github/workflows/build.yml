@@ -51,6 +51,18 @@ jobs:
           libayatana-appindicator3-dev \
           libxapp-dev
 
+    - name: Setup Windows C++/WinRT dependencies
+      if: matrix.os == 'windows-latest'
+      working-directory: ./desktop_client/ble
+      run: |
+        # Download and extract C++/WinRT
+        Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/Microsoft.Windows.CppWinRT/2.0.240405.15" -OutFile "cppwinrt.zip"
+        Expand-Archive -Path "cppwinrt.zip" -DestinationPath "cppwinrt"
+        
+        # Generate Windows Runtime headers
+        ./cppwinrt/bin/cppwinrt.exe -input sdk -output generated_headers
+      shell: powershell
+
     - name: Build
       working-directory: ./desktop_client
       env:
