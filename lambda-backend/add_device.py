@@ -78,7 +78,7 @@ def add_device(uid, platform):
             "notification_vol": 1.0,
             "muted": False,
             "send_to_self": True,
-            "ble_always_off": False,
+            "auto_ble": False,
             "startup": True,
             "destroy": False
         }, 

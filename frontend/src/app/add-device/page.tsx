@@ -58,33 +58,55 @@ export default function AddDevice() {
 
     try {
       setIsLoading(true);
+      console.log('=== STARTING ADD DEVICE ===');
+      console.log('Selected platform:', selectedPlatform);
+      
+      console.log('Making API request...');
       const response = await apiPost('https://en43r23fua.execute-api.us-east-2.amazonaws.com/prod/api/devices', {
         platform: selectedPlatform
       });
       
+      console.log('API response received:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      
       if (!response.ok) {
-        throw new Error('Failed to add device');
+        console.log('Response not OK, throwing error');
+        throw new Error(`Failed to add device: ${response.status} ${response.statusText}`);
       }
       
+      console.log('Parsing response JSON...');
       const responseData = await response.json();
+      console.log('Response data:', responseData);
       
       // Download the binary with proper filename
       if (responseData.download_url) {
+        console.log('Download URL found, starting download...');
         const downloadUrl = responseData.download_url;
         const filename = getFilenameForPlatform(selectedPlatform);
+        console.log('Filename:', filename);
         
         downloadAndRename(downloadUrl, filename)
+      } else {
+        console.log('No download_url in response');
       }
       
       // Redirect back to dashboard after download starts
+      console.log('Setting timeout for redirect...');
       setTimeout(() => {
         router.push('/dashboard');
       }, 1000);
       
     } catch (err) {
-      console.error('Error adding device:', err);
+      console.error('=== ERROR IN ADD DEVICE ===');
+      console.error('Error details:', err);
+      console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsLoading(false);
+      console.log('=== ADD DEVICE FINISHED ===');
     }
   };
 

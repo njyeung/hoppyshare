@@ -188,14 +188,20 @@ func onReady() {
 			defer networkMu.Unlock()
 
 			networkUp = up
-			if up {
-				ble.Stop()
-				bleState = false
-				mBLE.Uncheck()
-			} else {
-				ble.Start(clientID, config.DeviceID)
-				bleState = true
-				mBLE.Check()
+			
+			// Only auto-toggle BLE if AutoBLE setting is enabled
+			if settings.GetSettings().AutoBLE {
+				if up {
+					// Network is back up, stop BLE
+					ble.Stop()
+					bleState = false
+					mBLE.Uncheck()
+				} else {
+					// Network is down, start BLE
+					ble.Start(clientID, config.DeviceID)
+					bleState = true
+					mBLE.Check()
+				}
 			}
 		}:
 		default:

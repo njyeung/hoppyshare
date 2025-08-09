@@ -16,6 +16,7 @@ type Settings struct {
 	CacheTime  int    // time in seconds that messages are cached MAX 5 mins (BLE bucket size)
 	Muted      bool   // a notification sound plays
 	SendToSelf bool   // mqtt subscribes to itself
+	AutoBLE    bool   // Bluetooth Low Energy automatically turns on when network loss is detected
 	Startup    bool   // auto startup
 	Destroy    bool   // quits and removes itself when true
 }
@@ -30,6 +31,7 @@ var (
 		CacheTime:  30,
 		Muted:      false,
 		SendToSelf: true,
+		AutoBLE:    true,  // TODO
 		Startup:    true,  // TODO
 		Destroy:    false, // TODO
 	}
@@ -45,6 +47,7 @@ type DeviceSettings struct {
 		CacheTime  *int    `json:"cache_time,omitempty"`
 		Muted      *bool   `json:"muted,omitempty"`
 		SendToSelf *bool   `json:"send_to_self,omitempty"`
+		AutoBLE    *bool   `json:"auto_ble,omitempty"`
 		Startup    *bool   `json:"startup,omitempty"`
 		Destroy    *bool   `json:"destroy,omitempty"`
 	} `json:"settings"`
@@ -90,6 +93,9 @@ func ParseSettings(data []byte) error {
 			}
 			if s.SendToSelf != nil {
 				settings.SendToSelf = *s.SendToSelf
+			}
+			if s.AutoBLE != nil {
+				settings.AutoBLE = *s.AutoBLE
 			}
 			if s.Startup != nil {
 				oldStartup := settings.Startup
