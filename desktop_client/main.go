@@ -188,16 +188,13 @@ func onReady() {
 			defer networkMu.Unlock()
 
 			networkUp = up
-			
-			// Only auto-toggle BLE if AutoBLE setting is enabled
+
 			if settings.GetSettings().AutoBLE {
 				if up {
-					// Network is back up, stop BLE
 					ble.Stop()
 					bleState = false
 					mBLE.Uncheck()
 				} else {
-					// Network is down, start BLE
 					ble.Start(clientID, config.DeviceID)
 					bleState = true
 					mBLE.Check()
@@ -453,6 +450,21 @@ func PublishFile() {
 		notifyErr := notification.Notification("Could not read file: " + err.Error())
 		if notifyErr != nil {
 			log.Printf("Failed to read file")
+			log.Println("Notification error:", notifyErr)
+		}
+
+		loadingMu.Lock()
+		loading = false
+		loadingMu.Unlock()
+		requestIconUpdate()
+		return
+	}
+
+	// file size > 80MB
+	if len(fileBytes) > 80*1024*1024 {
+		notifyErr := notification.Notification("File is too large (>80MB). Operation cancelled.")
+		if notifyErr != nil {
+			log.Printf("File size check failed")
 			log.Println("Notification error:", notifyErr)
 		}
 

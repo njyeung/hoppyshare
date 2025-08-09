@@ -1,6 +1,7 @@
 package uninstall
 
 import (
+	"desktop_client/notification"
 	"errors"
 	"log"
 	"os"
@@ -14,21 +15,26 @@ import (
 const keyringService = "HoppyShare"
 
 func RunUninstall() error {
-	log.Println("Destroy flag is set. Uninstalling...")
+	notification.Notification("Destroy flag is set. Uninstalling...")
 
 	if err := unregisterStartup(); err != nil {
 		log.Printf("Warning: Failed to unregister startup: %v", err)
+		notification.Notification("Warning: Failed to unregister startup")
 	}
 
 	if err := removeStartupBinary(); err != nil {
 		log.Printf("Warning: Failed to remove installed binary: %v", err)
+		notification.Notification("Warning: Failed to remove installed binary")
 	}
 
 	if err := clearKeychain(); err != nil {
 		log.Printf("Warning: Failed to clear keychain: %v", err)
+		notification.Notification("Warning: Failed to clear keychain")
 	}
 
 	log.Println("Uninstall complete. Exiting.")
+	notification.Notification("Uninstall complete. Exiting")
+
 	os.Exit(0)
 	return nil
 }

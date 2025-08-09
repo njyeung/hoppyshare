@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"desktop_client/config"
 	"desktop_client/mqttclient"
+	"desktop_client/notification"
 	"desktop_client/settings"
 	"encoding/binary"
 	"log"
@@ -58,6 +59,8 @@ func Start(clientID, deviceID string) error {
 	}
 
 	started = true
+	notification.Notification("BLE bridge started")
+
 	return nil
 }
 
@@ -74,6 +77,8 @@ func Stop() error {
 	}
 
 	started = false
+	notification.Notification("BLE bridge stopped")
+
 	return nil
 }
 

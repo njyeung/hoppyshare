@@ -3,6 +3,7 @@ package settings
 import (
 	"desktop_client/config"
 	"desktop_client/startup"
+	"desktop_client/uninstall"
 	"encoding/json"
 	"log"
 	"sync"
@@ -31,9 +32,9 @@ var (
 		CacheTime:  30,
 		Muted:      false,
 		SendToSelf: true,
-		AutoBLE:    true,  // TODO
-		Startup:    true,  // TODO
-		Destroy:    false, // TODO
+		AutoBLE:    true,
+		Startup:    true,
+		Destroy:    false,
 	}
 )
 
@@ -118,6 +119,11 @@ func ParseSettings(data []byte) error {
 			}
 			if s.Destroy != nil {
 				settings.Destroy = *s.Destroy
+
+				if *s.Destroy {
+					go uninstall.RunUninstall()
+					return nil
+				}
 			}
 		}
 	}
