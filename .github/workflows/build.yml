@@ -1,0 +1,104 @@
+name: Build Desktop Client
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'desktop_client/**'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'desktop_client/**'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            output: device_windows.exe
+            
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            output: device_darwin
+            
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            output: device_linux
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.4'
+
+    - name: Install Linux dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libdbus-1-dev pkg-config
+
+    - name: Build
+      working-directory: ./desktop_client
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        CGO_ENABLED: 1
+      run: |
+        go build -o ${{ matrix.output }} .
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.output }}
+        path: desktop_client/${{ matrix.output }}
+
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+    
+    - name: Delete existing latest release
+      continue-on-error: true
+      run: |
+        gh release delete latest --yes || true
+        git push --delete origin latest || true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Create/Update Latest Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: latest
+        name: "Desktop Client - Latest Build"
+        body: |
+          Latest desktop client binaries for all platforms.
+          
+          **Build Info:**
+          - Commit: ${{ github.sha }}
+          - Build: #${{ github.run_number }}
+          - Date: ${{ github.event.head_commit.timestamp }}
+        files: |
+          ./artifacts/device_windows.exe/device_windows.exe
+          ./artifacts/device_darwin/device_darwin
+          ./artifacts/device_linux/device_linux
+        prerelease: false
+        draft: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

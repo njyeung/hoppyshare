@@ -2,26 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Navbar from "@/components/Navbar";
 import DeviceAccordion from "@/components/DeviceAccordion";
 import WaveBackground from "@/components/WaveBackground";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import { Device, DeviceSettings } from "@/types/device";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiDelete } from "@/lib/api";
 
 export default function Dashboard() {
   const router = useRouter();
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deviceToDelete, setDeviceToDelete] = useState<Device | null>(null);
-  const [expandedDevice, setExpandedDevice] = useState<string | null>(null);
-
-  const fetchDevices = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const queryClient = useQueryClient();
+  
+  const { data: devices = [], isLoading, error } = useQuery<Device[]>({
+    queryKey: ['devices'],
+    queryFn: async () => {
       const response = await apiGet('https://en43r23fua.execute-api.us-east-2.amazonaws.com/prod/api/devices');
       
       if (!response.ok) {
@@ -29,24 +24,50 @@ export default function Dashboard() {
       }
       
       const devicesData = await response.json();
-      setDevices(devicesData.devices);
-      
-      // Set first device as expanded by default
-      if (devicesData.devices.length > 0 && !expandedDevice) {
-        setExpandedDevice(devicesData.devices[0].deviceid);
-      }
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('Error fetching devices:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return devicesData.devices;
+    },
+    staleTime: 0,
+    gcTime: 1000 * 60 * 5,
+  });
 
+  const deleteDeviceMutation = useMutation({
+    mutationFn: async (deviceId: string) => {
+      console.log('Attempting to delete device with ID:', deviceId);
+      const url = `https://en43r23fua.execute-api.us-east-2.amazonaws.com/prod/api/devices/${deviceId}`;
+      console.log('DELETE URL:', url);
+      
+      const response = await apiDelete(url);
+      console.log('Delete response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Delete error response:', errorText);
+        
+        // Handle case where device is already deleted/revoked
+        if (response.status === 400 && errorText.includes('already revoked')) {
+          console.log('Device already deleted, treating as success');
+          return { success: true, message: 'Device already deleted' };
+        }
+        
+        throw new Error(`Failed to delete device: ${response.status} - ${errorText}`);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['devices'] });
+    },
+  });
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deviceToDelete, setDeviceToDelete] = useState<Device | null>(null);
+  const [expandedDevice, setExpandedDevice] = useState<string | null>(null);
+
+  // Set first device as expanded by default when devices first load
   useEffect(() => {
-    fetchDevices();
-  }, []);
+    if (devices.length > 0 && !expandedDevice) {
+      setExpandedDevice(devices[0].deviceid);
+    }
+  }, [devices.length]);
 
   const handleSettingsChange = (deviceId: string, newSettings: DeviceSettings) => {
     console.log('Settings change requested for device:', deviceId, newSettings);
@@ -62,9 +83,10 @@ export default function Dashboard() {
     setDeviceToDelete(null);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (deviceToDelete) {
       handleSettingsChange(deviceToDelete.deviceid, { ...deviceToDelete.settings, destroy: true });
+      await deleteDeviceMutation.mutateAsync(deviceToDelete.deviceid);
     }
     setShowDeleteModal(false);
     setDeviceToDelete(null);
@@ -112,11 +134,11 @@ export default function Dashboard() {
         <div className="container mt-24 px-3 md:px-12 lg:px-28 relative z-10">
           {devices.length === 0 ? (
             // No devices - show centered connect button
-            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
-              <h2 className="text-3xl text-secondary-darker text-center">
+            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-3">
+              <h2 className="text-3xl text-secondary-darker text-center font-semibold">
                 Welcome to HoppyShare
               </h2>
-              <p className="text-secondary-muted text-center max-w-md">
+              <p className="text-secondary-muted text-center max-w-md mb-16">
                 Get started by connecting your first device.
               </p>
               <button 
@@ -128,7 +150,7 @@ export default function Dashboard() {
                     <img src="/connect.svg" alt="Connect device" className="w-full h-full" />
                   </div>
                   <div className="text-left">
-                    <div className="text-lg font-semibold text-secondary-dark group-hover:text-secondary-darker transition-colors">Connect Your First Device</div>
+                    <div className="text-lg font-semibold text-secondary-dark group-hover:text-secondary-darker transition-colors">Connect This Device</div>
                     <div className="text-sm text-secondary-muted group-hover:text-secondary transition-colors">Start building your HoppyShare network</div>
                   </div>
                 </div>

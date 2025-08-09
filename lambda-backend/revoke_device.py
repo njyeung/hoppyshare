@@ -1,6 +1,6 @@
 import mosquitto_api
 from config import supabase
-from utils import error_response, forbidden_response
+from utils import error_response, forbidden_response, success_response
 from get_devices import get_devices
 
 def revoke_device(uid, device_id):
@@ -23,9 +23,6 @@ def revoke_device(uid, device_id):
 
         # Revoke the cert in mosquitto
         res = mosquitto_api.revoke_device(cert)
-
-        if res.get("status_code") != 200:
-            return error_response("Could not revoke cert, likely because it was already revoked")
         
         # Remove device from database
         delete_res = (
@@ -35,7 +32,7 @@ def revoke_device(uid, device_id):
             .eq("uid", uid)
             .execute()
         )
-
+        
         # Update settings topic
         query = get_devices(uid)
 
@@ -49,7 +46,10 @@ def revoke_device(uid, device_id):
         if pub_res.get("status_code") != 200:
             return error_response("Could not publish new settings to topic")
 
-        return res
+        if res.get("status_code") != 200:
+            return error_response("Could not revoke cert, likely because it was already revoked")
+        
+        return success_response("successfully deleted device")
         
     except Exception as e:
         return error_response("Failed to revoke device", str(e))
