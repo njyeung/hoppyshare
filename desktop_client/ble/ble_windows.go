@@ -3,8 +3,8 @@
 package ble
 
 /*
-#cgo CXXFLAGS: -std=c++20 -DWINRT_LEAN_AND_MEAN -DWIN32_LEAN_AND_MEAN -I./generated_headers -IC:/PROGRA~2/WINDOW~1/10/Include/10.0.26100.0/um -IC:/PROGRA~2/WINDOW~1/10/Include/10.0.26100.0/shared
-#cgo LDFLAGS: -lwindowsapp -LC:/PROGRA~2/WINDOW~1/10/Lib/10.0.26100.0/um/x64
+#cgo CXXFLAGS: -std=c++20 -DWINRT_LEAN_AND_MEAN -DWIN32_LEAN_AND_MEAN -I./generated_headers
+#cgo LDFLAGS: -lwindowsapp -loleaut32 -lole32
 #cgo CFLAGS: -DUNICODE -D_UNICODE
 #include <stdlib.h>
 #include "BLEBridge_windows.h"
