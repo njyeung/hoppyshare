@@ -74,7 +74,12 @@ jobs:
         GOARCH: ${{ matrix.goarch }}
         CGO_ENABLED: 1
       run: |
-        go build -o ${{ matrix.output }} .
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          go build -ldflags="-H windowsgui" -o ${{ matrix.output }} .
+        else
+          go build -o ${{ matrix.output }} .
+        fi
+      shell: bash
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
