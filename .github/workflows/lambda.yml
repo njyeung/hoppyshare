@@ -1,0 +1,122 @@
+name: Deploy Lambda Backend
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'lambda-backend/**'
+      - '.github/workflows/lambda.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'lambda-backend/**'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  deploy-lambda:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Lambda package
+      working-directory: ./lambda-backend
+      run: |
+        chmod +x build_lambda.sh
+        ./build_lambda.sh
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Deploy to AWS Lambda
+      working-directory: ./lambda-backend
+      run: |
+        # Update Lambda function code
+        aws lambda update-function-code \
+          --function-name hoppyshare \
+          --zip-file fileb://function.zip
+
+    - name: Upload Lambda package to S3 (backup)
+      working-directory: ./lambda-backend
+      run: |
+        # Optional: backup the lambda package to S3
+        aws s3 cp function.zip s3://hoppyshare-binaries/lambda/function-${{ github.sha }}.zip
+        aws s3 cp function.zip s3://hoppyshare-binaries/lambda/function-latest.zip
+
+    - name: Upload Lambda package as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: lambda-function
+        path: lambda-backend/function.zip
+
+  publish-lambda-release:
+    needs: deploy-lambda
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download lambda artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: lambda-function
+        path: ./lambda-artifacts
+    
+    - name: Delete existing lambda release
+      continue-on-error: true
+      run: |
+        gh release delete lambda-latest --yes || true
+        git push --delete origin lambda-latest || true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Create/Update Lambda Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: lambda-latest
+        name: "Lambda Backend - Latest Build"
+        body: |
+          Latest lambda backend package.
+          
+          **Build Info:**
+          - Commit: ${{ github.sha }}
+          - Build: #${{ github.run_number }}
+          - Date: ${{ github.event.head_commit.timestamp }}
+          - Function: hoppyshare
+        files: |
+          ./lambda-artifacts/function.zip
+        prerelease: false
+        draft: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-only:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Lambda package (test only)
+      working-directory: ./lambda-backend
+      run: |
+        chmod +x build_lambda.sh
+        ./build_lambda.sh
+        echo "Lambda package built successfully: $(ls -la function.zip)"
