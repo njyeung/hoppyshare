@@ -6,7 +6,6 @@ WORKDIR /var/task
 
 # Copy your code and requirements
 COPY *.py ./
-COPY ./certs ./certs
 COPY requirements.txt ./
 
 # Install dependencies into /var/task (Lambda root)
