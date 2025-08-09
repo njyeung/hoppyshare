@@ -2,11 +2,11 @@ import requests
 from functools import wraps
 from jose import jwt, JWTError
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET")
+
+if not SUPABASE_JWT_SECRET:
+    raise ValueError("Missing required environment variable: SUPABASE_JWT_SECRET")
 
 def get_uid_from_auth_header(headers):
     auth_header = headers.get("Authorization", "")
