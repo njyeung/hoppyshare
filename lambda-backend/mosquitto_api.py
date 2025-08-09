@@ -5,12 +5,41 @@ import json
 import paho.mqtt.client as mqtt
 import ssl
 import time
+import boto3
 from utils import api_response
 
 MOSQUITTO_API = "https://18.188.110.246"
-CERT = "./certs/lambda.crt"
-KEY = "./certs/lambda.key"
-CA = "./certs/ca.crt"
+
+def download_certs():
+    cert_files = {
+        "ca.crt": "/tmp/ca.crt",
+        "lambda.crt": "/tmp/lambda.crt", 
+        "lambda.key": "/tmp/lambda.key"
+    }
+    
+    s3 = boto3.client("s3")
+    bucket = "hoppyshare-binaries"
+    
+    for s3_key, local_path in cert_files.items():
+        if not os.path.exists(local_path):
+            try:
+                s3.download_file(bucket, s3_key, local_path)
+                print(f"Downloaded {s3_key} to {local_path}")
+            except Exception as e:
+                print(f"Failed to download {s3_key}: {e}")
+                raise
+    
+    return "/tmp/lambda.crt", "/tmp/lambda.key", "/tmp/ca.crt"
+
+# Download certificates on module import
+try:
+    CERT, KEY, CA = download_certs()
+# Fallback for local dev
+except Exception as e:
+    print(f"Failed to download certificates: {e}")
+    CERT = "./certs/lambda.crt"
+    KEY = "./certs/lambda.key" 
+    CA = "./certs/ca.crt"
 
 @api_response
 def reload_mosquitto():

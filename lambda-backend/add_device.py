@@ -28,18 +28,8 @@ def encrypt_group_key(group_key: bytes, cert_pem: str) -> bytes:
     return encrypted
 
 def add_device(uid, platform):
-    print(f"[add_device] Starting add_device for uid={uid}, platform={platform}")
-    
     # Add device to mosquitto
-    print(f"[add_device] Calling mosquitto_api.add_device")
-    try:
-        res = mosquitto_api.add_device(uid)
-        print(f"[add_device] mosquitto_api.add_device result: {res}")
-    except Exception as e:
-        print(f"[add_device] ERROR in mosquitto_api.add_device: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return error_response(f"Mosquitto API error: {str(e)}")
+    res = mosquitto_api.add_device(uid)
     
     if res["status_code"] != 200:
         return error_response("Failed to add device", res)

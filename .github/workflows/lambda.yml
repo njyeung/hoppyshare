@@ -27,6 +27,12 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
+    - name: Create CA certificate from secret
+      working-directory: ./lambda-backend
+      run: |
+        mkdir -p certs
+        echo "${{ secrets.CA_CERTIFICATE }}" > certs/ca.crt
+
     - name: Build Lambda package
       working-directory: ./lambda-backend
       run: |

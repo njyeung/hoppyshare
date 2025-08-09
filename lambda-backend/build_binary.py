@@ -41,12 +41,17 @@ def build_binary(platform, device_id, cert, key, group_key):
         print(f"[build_binary] error downloading from S3: {e}")
         return None
 
-    # Load CA cert
+    # Load CA cert from S3
     try:
-        ca_cert = open("./certs/ca.crt").read()
+        ca_cert_path = "/tmp/ca.crt"
+        if not os.path.exists(ca_cert_path):
+            print(f"[build_binary] downloading ca.crt from S3")
+            s3.download_file("hoppyshare-binaries", "ca.crt", ca_cert_path)
+        
+        ca_cert = open(ca_cert_path).read()
     except Exception as e:
         print(f"[build_binary] error loading CA cert: {e}")
-        return None
+        return None, None
 
     # Encrypt certs and keys
     encryption_key = generate_key()
