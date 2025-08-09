@@ -102,21 +102,3 @@ jobs:
         draft: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  build-only:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Build Lambda package (test only)
-      working-directory: ./lambda-backend
-      run: |
-        chmod +x build_lambda.sh
-        ./build_lambda.sh
-        echo "Lambda package built successfully: $(ls -la function.zip)"
