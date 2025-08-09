@@ -44,7 +44,12 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libdbus-1-dev pkg-config
+        sudo apt-get install -y \
+          libdbus-1-dev \
+          pkg-config \
+          libgtk-3-dev \
+          libayatana-appindicator3-dev \
+          libxapp-dev
 
     - name: Build
       working-directory: ./desktop_client
