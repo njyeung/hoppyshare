@@ -143,9 +143,17 @@ export default function Dashboard() {
               </p>
               <button 
                 onClick={() => router.push('/add-device')}
-                className="group bg-white border-2 border-dashed border-secondary-light hover:border-solid hover:border-secondary hover:bg-secondary-light/10 rounded-lg px-8 py-6 transition-all duration-300 hover:scale-[102%]"
+                className="group bg-white border-2 border-dashed border-secondary-light hover:border-solid hover:border-secondary hover:bg-secondary-light/10 rounded-lg transition-all duration-300 hover:scale-[102%] px-8 py-6 sm:px-8 sm:py-6"
               >
-                <div className="flex items-center space-x-4">
+                {/* Mobile: Just icon in square */}
+                <div className="flex items-center justify-center sm:hidden">
+                  <div className="w-8 h-8 transition-transform group-hover:scale-110">
+                    <img src="/connect.svg" alt="Connect device" className="w-full h-full" />
+                  </div>
+                </div>
+                
+                {/* Desktop: Full button with text */}
+                <div className="hidden sm:flex items-center space-x-4">
                   <div className="w-8 h-8 transition-transform group-hover:scale-110">
                     <img src="/connect.svg" alt="Connect device" className="w-full h-full" />
                   </div>
@@ -165,9 +173,17 @@ export default function Dashboard() {
                 </h2>
                 <button 
                   onClick={() => router.push('/add-device')}
-                  className="group bg-white border-2 border-dashed border-secondary-light hover:border-solid hover:border-secondary hover:bg-secondary-light/10 rounded-lg px-6 py-4 transition-all duration-300 hover:scale-[102%]"
+                  className="group bg-white border-2 border-dashed border-secondary-light hover:border-solid hover:border-secondary hover:bg-secondary-light/10 rounded-lg transition-all duration-300 hover:scale-[102%] px-3 py-3 sm:px-6 sm:py-4"
                 >
-                  <div className="flex items-center space-x-3">
+                  {/* Mobile: Just icon */}
+                  <div className="flex items-center justify-center sm:hidden">
+                    <div className="w-6 h-6 transition-transform group-hover:scale-110">
+                      <img src="/connect.svg" alt="Connect device" className="w-full h-full" />
+                    </div>
+                  </div>
+                  
+                  {/* Desktop: Full button with text */}
+                  <div className="hidden sm:flex items-center space-x-3">
                     <div className="w-6 h-6 transition-transform group-hover:scale-110">
                       <img src="/connect.svg" alt="Connect device" className="w-full h-full" />
                     </div>

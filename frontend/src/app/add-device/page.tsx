@@ -130,13 +130,23 @@ export default function AddDevice() {
           <div className="bg-gray-50 p-6 rounded-lg">
             <h3 className="text-lg font-semibold text-secondary-darker mb-4">MacOS Setup Instructions</h3>
             <ol className="list-decimal list-inside space-y-2 text-secondary-dark">
-              <li>Download the HoppyShare client for macOS</li>
-              <li>Open Terminal to the downloaded directory and remove quarantine:</li>
-              <div className="bg-gray-800 mb-4 text-green-400 p-3 rounded mt-2 font-mono text-sm">
+              <li>Download the HoppyShare client for MacOS</li>
+              <li>Open Terminal to the downloaded directory</li> 
+              <li>Remove quarantine and start the executable:</li>
+              <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
                 xattr -d com.apple.quarantine ./HoppyShare
               </div>
               <li>The application will start and appear in your system tray</li>
             </ol>
+            <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-400 rounded">
+              <h4 className="font-semibold text-blue-800 mb-2">Installation Location</h4>
+              <p className="text-blue-700 text-sm">
+                The binary will relocate itself to: 
+                <code className="bg-blue-100 px-2 py-1 rounded text-xs ml-2">
+                  ~/Library/Application Support/HoppyShare/HoppyShare
+                </code>
+              </p>
+            </div>
           </div>
         );
       case 'LINUX':
@@ -147,17 +157,26 @@ export default function AddDevice() {
               <li>Download the HoppyShare client for Linux</li>
               <li>Extract the downloaded file to a directory of your choice</li>
               <li>Make the binary executable:</li>
-              <div className="bg-gray-800 mb-4 text-green-400 p-3 rounded mt-2 font-mono text-sm">
+              <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
                 chmod +x hoppyshare
               </div>
               <li>Run the application:</li>
-              <div className="bg-gray-800 mb-4 text-green-400 p-3 rounded mt-2 font-mono text-sm">
+              <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
                 ./hoppyshare
               </div>
               <li>The application will start and appear in your system tray</li>
               <p className='pl-7 text-sm text-primary-muted'>Note: System tray support requires a desktop environment like GNOME, KDE, or XFCE. Window managers like Hyprland may not display the system tray icon.</p>
 
             </ol>
+            <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-400 rounded">
+              <h4 className="font-semibold text-blue-800 mb-2">Installation Location</h4>
+              <p className="text-blue-700 text-sm">
+                The binary will relocate itself to: 
+                <code className="bg-blue-100 px-2 py-1 rounded text-xs ml-2">
+                  ~/.local/bin/hoppyshare
+                </code>
+              </p>
+            </div>
           </div>
         );
       case 'WINDOWS':
@@ -170,7 +189,16 @@ export default function AddDevice() {
               <p className='pl-7 mb-4 text-sm text-primary-muted'>The binary requires admin permissions to relocate itself and register for startup</p>
               <li>The application will start and appear in your system tray</li>
             </ol>
-            <div className="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+            <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-400 rounded">
+              <h4 className="font-semibold text-blue-800 mb-2">Installation Location</h4>
+              <p className="text-blue-700 text-sm">
+                The binary will relocate itself to: 
+                <code className="bg-blue-100 px-2 py-1 rounded text-xs ml-2">
+                  %LOCALAPPDATA%\HoppyShare\HoppyShare.exe
+                </code>
+              </p>
+            </div>
+            <div className="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
               <h4 className="font-semibold text-yellow-800 mb-2">Common Issue: Antivirus Detection</h4>
               <p className="text-yellow-700 text-xs">
                 If the downloaded file disappears or you don't see the system tray icon, your antivirus software may have quarantined the file. 
