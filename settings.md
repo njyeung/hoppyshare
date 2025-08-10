@@ -79,6 +79,7 @@ interface DeviceSettings {
 ```
 
 **Go (Desktop Client)**:
+The Go client uses PascalCase while JSON uses snake_case:
 ```go
 type Settings struct {
     Nickname   string // "Unnamed Device"
@@ -94,24 +95,8 @@ type Settings struct {
 }
 ```
 
-### Field Name Mapping
-The Go client uses PascalCase while JSON uses snake_case:
-
-| JSON Field | Go Field |
-|------------|----------|
-| `auto_copy` | `AutoCopy` |
-| `auto_paste` | `AutoPaste` |
-| `cache_time` | `CacheTime` |
-| `send_to_self` | `SendToSelf` |
-| `auto_ble` | `AutoBLE` |
-
 ### Validation Rules
 - `cache_time`: Must be between 1 and 300 seconds
 - `nickname`: fallback to "Unnamed Device"
 - `auto_paste`: Only functions when `auto_copy` is true
 
-### Special Behaviors
-- **destroy**: When set to true, causes the desktop client to quit and self-remove
-- **startup**: Changes to this setting immediately update system startup registry/autostart
-- **auto_ble**: Controls whether BLE automatically activates on network loss
-- **enabled**: Master switch that disables all message processing when false
