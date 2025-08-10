@@ -44,6 +44,8 @@ func Connect() (string, error) {
 	tlsConfig := &tls.Config{
 		RootCAs:      pool,
 		Certificates: []tls.Certificate{cert},
+		// ServerName omitted - will skip hostname verification when connecting to IP
+		// TODO: Add ServerName when using proper domain name
 	}
 
 	go func() {
