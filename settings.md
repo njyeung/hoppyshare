@@ -1,5 +1,3 @@
-# HoppyShare Device Settings Documentation
-
 This document defines the standardized device settings schema used across all components of HoppyShare:
 - **Python Backend** (Lambda) - Generates default settings
 - **Frontend** (React/TypeScript) - Displays and updates settings  
