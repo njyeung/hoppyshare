@@ -58,36 +58,21 @@ export default function AddDevice() {
 
     try {
       setIsLoading(true);
-      console.log('=== STARTING ADD DEVICE ===');
-      console.log('Selected platform:', selectedPlatform);
       
-      console.log('Making API request...');
       const response = await apiPost('https://en43r23fua.execute-api.us-east-2.amazonaws.com/prod/api/devices', {
         platform: selectedPlatform
       });
       
-      console.log('API response received:', {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-      
       if (!response.ok) {
-        console.log('Response not OK, throwing error');
         throw new Error(`Failed to add device: ${response.status} ${response.statusText}`);
       }
       
-      console.log('Parsing response JSON...');
       const responseData = await response.json();
-      console.log('Response data:', responseData);
       
       // Download the binary with proper filename
       if (responseData.download_url) {
-        console.log('Download URL found, starting download...');
         const downloadUrl = responseData.download_url;
         const filename = getFilenameForPlatform(selectedPlatform);
-        console.log('Filename:', filename);
         
         downloadAndRename(downloadUrl, filename)
       } else {
@@ -95,18 +80,15 @@ export default function AddDevice() {
       }
       
       // Redirect back to dashboard after download starts
-      console.log('Setting timeout for redirect...');
       setTimeout(() => {
         router.push('/dashboard');
       }, 1000);
       
     } catch (err) {
-      console.error('=== ERROR IN ADD DEVICE ===');
       console.error('Error details:', err);
       console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsLoading(false);
-      console.log('=== ADD DEVICE FINISHED ===');
     }
   };
 
@@ -127,14 +109,14 @@ export default function AddDevice() {
     switch (selectedPlatform) {
       case 'MACOS':
         return (
-          <div className="bg-gray-50 p-6 rounded-lg">
+          <div className="bg-gray-50/90 p-6 rounded-lg">
             <h3 className="text-lg font-semibold text-secondary-darker mb-4">MacOS Setup Instructions</h3>
             <ol className="list-decimal list-inside space-y-2 text-secondary-dark">
               <li>Download the HoppyShare client for MacOS</li>
               <li>Open Terminal to the downloaded directory</li> 
               <li>Remove quarantine and start the executable:</li>
               <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
-                xattr -d com.apple.quarantine ./HoppyShare
+                xattr -d com.apple.quarantine && chmod +x ./HoppyShare && ./HoppyShare
               </div>
               <li>The application will start and appear in your system tray</li>
             </ol>
@@ -151,18 +133,18 @@ export default function AddDevice() {
         );
       case 'LINUX':
         return (
-          <div className="bg-gray-50 p-6 rounded-lg">
+          <div className="bg-gray-50/90 p-6 rounded-lg">
             <h3 className="text-lg font-semibold text-secondary-darker mb-4">Linux Setup Instructions</h3>
             <ol className="list-decimal list-inside space-y-2 text-secondary-dark">
               <li>Download the HoppyShare client for Linux</li>
               <li>Extract the downloaded file to a directory of your choice</li>
               <li>Make the binary executable:</li>
               <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
-                chmod +x hoppyshare
+                chmod +x HoppyShare
               </div>
               <li>Run the application:</li>
               <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
-                ./hoppyshare
+                ./HoppyShare
               </div>
               <li>The application will start and appear in your system tray</li>
               <p className='pl-7 text-sm text-primary-muted'>Note: System tray support requires a desktop environment like GNOME, KDE, or XFCE. Window managers like Hyprland may not display the system tray icon.</p>
@@ -181,7 +163,7 @@ export default function AddDevice() {
         );
       case 'WINDOWS':
         return (
-          <div className="bg-gray-50 p-6 rounded-lg">
+          <div className="bg-gray-50/90 p-6 rounded-lg">
             <h3 className="text-lg font-semibold text-secondary-darker mb-4">Windows Setup Instructions</h3>
             <ol className="list-decimal list-inside space-y-2 text-secondary-dark">
               <li>Download the HoppyShare client for Windows</li>
@@ -230,7 +212,7 @@ export default function AddDevice() {
                 onClick={() => handlePlatformSelect('MACOS')}
                 className={`flex flex-col items-center p-6 rounded-xl border-2 transition-all duration-200 ${
                   selectedPlatform === 'MACOS'
-                    ? 'border-primary bg-primary-light text-secondary-darker'
+                    ? 'border-primary bg-primary-light/90 text-secondary-darker'
                     : 'border-secondary-light hover:border-secondary-dark bg-white text-secondary-dark'
                 }`}
               >
@@ -252,7 +234,7 @@ export default function AddDevice() {
                 onClick={() => handlePlatformSelect('LINUX')}
                 className={`flex flex-col items-center p-6 rounded-xl border-2 transition-all duration-200 ${
                   selectedPlatform === 'LINUX'
-                    ? 'border-primary bg-primary-light text-secondary-darker'
+                    ? 'border-primary bg-primary-light/90 text-secondary-darker'
                     : 'border-secondary-light hover:border-secondary-dark bg-white text-secondary-dark'
                 }`}
               >
@@ -274,7 +256,7 @@ export default function AddDevice() {
                 onClick={() => handlePlatformSelect('WINDOWS')}
                 className={`flex flex-col items-center p-6 rounded-xl border-2 transition-all duration-200 ${
                   selectedPlatform === 'WINDOWS'
-                    ? 'border-primary bg-primary-light text-secondary-darker'
+                    ? 'border-primary bg-primary-light/90 text-secondary-darker'
                     : 'border-secondary-light hover:border-secondary-dark bg-white text-secondary-dark'
                 }`}
               >
@@ -303,7 +285,7 @@ export default function AddDevice() {
             <div className="flex justify-between items-center mb-12">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="px-4 py-2 rounded-lg bg-primary-muted/40 hover:underline text-white transition-colors"
+                className="px-4 py-2 rounded-lg bg-primary-muted/80 hover:underline text-white transition-colors"
               >
                 Back to Dashboard
               </button>
