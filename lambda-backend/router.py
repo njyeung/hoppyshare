@@ -16,19 +16,10 @@ def route_action(event):
     body = json.loads(event["body"]) if event.get("body") else {}
     pathParameters = event.get("pathParameters", {})
 
-    # Debug: Log all incoming requests
-    print(f"DEBUG - Method: {method}, Path: {path}")
-    print(f"DEBUG - Full event: {json.dumps(event, indent=2)}")
-
     # Route for supabase webhook
     if method == "POST" and path == "/api/onboard":
-        print(f"Webhook received - Method: {method}, Path: {path}")
-        print(f"All headers: {headers}")
-        print(f"Body: {body}")
         
         auth_header = headers.get("Auth") or headers.get("auth")
-        print(f"Auth header: {auth_header}")
-        print(f"Expected: {SUPABASE_SERVICE_SECRET}")
         
         if auth_header != SUPABASE_SERVICE_SECRET:
             return forbidden_response("Invalid service token")
