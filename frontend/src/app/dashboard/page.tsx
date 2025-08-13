@@ -143,7 +143,9 @@ export default function Dashboard() {
               </p>
               <button 
                 onClick={() => router.push('/add-device')}
-                className="group bg-white border-2 border-dashed border-secondary-light hover:border-solid hover:border-secondary hover:bg-secondary-light/10 rounded-lg transition-all duration-300 hover:scale-[102%] px-8 py-6 sm:px-8 sm:py-6"
+                className="group bg-white border-2 border-dashed border-secondary-light
+                hover:border-solid hover:border-secondary hover:bg-secondary-light/10 rounded-lg 
+                transition-all duration-300 hover:scale-[102%] px-8 py-6 sm:px-8 sm:py-6 hover:cursor-pointer"
               >
                 {/* Mobile: Just icon in square */}
                 <div className="flex items-center justify-center sm:hidden">
@@ -153,7 +155,7 @@ export default function Dashboard() {
                 </div>
                 
                 {/* Desktop: Full button with text */}
-                <div className="hidden sm:flex items-center space-x-4">
+                <div className="hidden sm:flex items-center space-x-4 ">
                   <div className="w-8 h-8 transition-transform group-hover:scale-110">
                     <img src="/connect.svg" alt="Connect device" className="w-full h-full" />
                   </div>
@@ -173,7 +175,10 @@ export default function Dashboard() {
                 </h2>
                 <button 
                   onClick={() => router.push('/add-device')}
-                  className="group bg-white border-2 border-dashed border-secondary-light hover:border-solid hover:border-secondary hover:bg-secondary-light/10 rounded-lg transition-all duration-300 hover:scale-[102%] px-3 py-3 sm:px-6 sm:py-4"
+                  className="group bg-white border-2 border-dashed 
+                  border-secondary-light hover:border-solid hover:border-secondary 
+                  hover:bg-secondary-light/10 rounded-lg transition-all duration-300 
+                  hover:scale-[102%] px-3 py-3 sm:px-6 sm:py-4 hover:cursor-pointer"
                 >
                   {/* Mobile: Just icon */}
                   <div className="flex items-center justify-center sm:hidden">

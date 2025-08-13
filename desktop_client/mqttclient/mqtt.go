@@ -133,6 +133,7 @@ func Subscribe(client mqtt.Client) {
 		cacheMsg(decoded.Filename, decoded.Type, decoded.Payload)
 
 		log.Printf("[NOTES] Received %s (%s), %d bytes", decoded.Filename, decoded.Type, len(decoded.Payload))
+
 	}); token.Wait() && token.Error() != nil {
 		notification.Notification("Error: Could not subscribe to server")
 		log.Printf("Subscribe error (notes): %v", token.Error())

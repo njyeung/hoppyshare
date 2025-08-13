@@ -190,7 +190,7 @@ export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequ
               <button 
                 onClick={handleSaveChanges}
                 disabled={isSaving}
-                className={`rounded-lg transition-all p-3 text-white w-full max-w-[400px] font-medium ${
+                className={`rounded-lg transition-all p-3 text-white w-full max-w-[400px] font-medium hover:cursor-pointer ${
                   isSaving 
                     ? 'bg-primary text-white cursor-not-allowed' 
                     : 'bg-secondary-light hover:bg-secondary'
