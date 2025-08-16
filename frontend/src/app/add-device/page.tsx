@@ -192,7 +192,6 @@ export default function AddDevice() {
               <ul className="text-yellow-700 text-xs list-disc list-inside space-y-1">
                 <li><strong>Windows Defender:</strong> Add an exclusion for the HoppyShare.exe file</li>
                 <li><strong>Malwarebytes/other AV:</strong> Whitelist or exclude the HoppyShare application</li>
-                <li><strong>Still blocked?</strong> Try running <code className="bg-yellow-100 px-1 rounded">Unblock-File</code> command above</li>
               </ul>
             </div>
           </div>
