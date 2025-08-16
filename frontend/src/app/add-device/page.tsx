@@ -171,6 +171,7 @@ export default function AddDevice() {
               <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
                 Unblock-File -Path ".\HoppyShare.exe"<br/>
               </div>
+              <li>Whitelist %LOCALAPPDATA%\HoppyShare in your antivirus (Windows Defender, Malwarebytes, etc)</li>
               <li>Right click the binary and run as administrator</li>
               <li>The application will start and appear in your system tray</li>
             </ol>
@@ -189,8 +190,8 @@ export default function AddDevice() {
                 If the file disappears or the app doesn't start, your antivirus may have blocked it:
               </p>
               <ul className="text-yellow-700 text-xs list-disc list-inside space-y-1">
-                <li><strong>Windows Defender:</strong> Add an exclusion for the HoppyShare.exe file</li>
-                <li><strong>Malwarebytes/other AV:</strong> Whitelist or exclude the HoppyShare application</li>
+                <li><strong>Windows Defender:</strong> Add an exclusion for %LOCALAPPDATA%\HoppyShare directory</li>
+                <li><strong>Malwarebytes/other AV:</strong> Whitelist or exclude %LOCALAPPDATA%\HoppyShare directory</li>
               </ul>
             </div>
           </div>
