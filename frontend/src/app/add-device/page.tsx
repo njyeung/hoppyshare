@@ -116,7 +116,7 @@ export default function AddDevice() {
               <li>Open Terminal to the downloaded directory</li> 
               <li>Remove quarantine and start the executable:</li>
               <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
-                xattr -d com.apple.quarantine && chmod +x ./HoppyShare && ./HoppyShare
+                xattr -d com.apple.quarantine ./HoppyShare && chmod +x ./HoppyShare && ./HoppyShare
               </div>
               <li>The application will start and appear in your system tray</li>
             </ol>
@@ -167,8 +167,12 @@ export default function AddDevice() {
             <h3 className="text-lg font-semibold text-secondary-darker mb-4">Windows Setup Instructions</h3>
             <ol className="list-decimal list-inside space-y-2 text-secondary-dark">
               <li>Download the HoppyShare client for Windows</li>
-              <li>Right click and run the app as administrator</li>
-              <p className='pl-7 mb-4 text-sm text-primary-muted'>The binary requires admin permissions to relocate itself and register for startup</p>
+              <li>Open PowerShell as Administrator in the download folder</li>
+              <li>Remove Windows quarantine and run:</li>
+              <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
+                Unblock-File -Path ".\HoppyShare.exe"<br/>
+                .\HoppyShare.exe
+              </div>
               <li>The application will start and appear in your system tray</li>
             </ol>
             <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-400 rounded">
@@ -181,11 +185,15 @@ export default function AddDevice() {
               </p>
             </div>
             <div className="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-              <h4 className="font-semibold text-yellow-800 mb-2">Common Issue: Antivirus Detection</h4>
-              <p className="text-yellow-700 text-xs">
-                If the downloaded file disappears or you don't see the system tray icon, your antivirus software may have quarantined the file. 
-                While Windows Defender typically allows it, third-party antivirus software may flag it as suspicious.
+              <h4 className="font-semibold text-yellow-800 mb-2">Antivirus Issues</h4>
+              <p className="text-yellow-700 text-xs mb-2">
+                If the file disappears or the app doesn't start, your antivirus may have blocked it:
               </p>
+              <ul className="text-yellow-700 text-xs list-disc list-inside space-y-1">
+                <li><strong>Windows Defender:</strong> Add an exclusion for the HoppyShare.exe file</li>
+                <li><strong>Malwarebytes/other AV:</strong> Whitelist or exclude the HoppyShare application</li>
+                <li><strong>Still blocked?</strong> Try running <code className="bg-yellow-100 px-1 rounded">Unblock-File</code> command above</li>
+              </ul>
             </div>
           </div>
         );
