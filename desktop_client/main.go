@@ -68,7 +68,7 @@ var loading4IconWindows []byte
 //go:embed assets/notification.wav
 var notificationSound []byte
 
-// MAX 5 MINUTES SINCE OUR MSG HASH ROTATES EVERY 5 MINS
+// max 5 minutes since our msg hash rotates every 5 mins
 const MESSAGE_CACHE_DURATION = 120
 
 var (
