@@ -19,7 +19,7 @@ def route_action(event):
     # Route for supabase webhook
     if method == "POST" and path == "/api/onboard":
         
-        auth_header = headers.get("Auth") or headers.get("auth")
+        auth_header = headers.get("x-webhook")
         
         if auth_header != SUPABASE_SERVICE_SECRET:
             return forbidden_response("Invalid service token")

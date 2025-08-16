@@ -81,7 +81,7 @@ export default function Dashboard() {
 
   const handleDeleteConfirm = async () => {
     if (deviceToDelete) {
-      // Set destroy flag to trigger client self-destruction
+      // Set destroy flag
       try {
         await apiPut(`https://en43r23fua.execute-api.us-east-2.amazonaws.com/prod/api/settings/${deviceToDelete.deviceid}`, {
           new_settings: { ...deviceToDelete.settings, destroy: true }
@@ -90,7 +90,7 @@ export default function Dashboard() {
         console.error('Error setting destroy flag:', error);
       }
       
-      // Delete the device record
+      // Hit api
       await deleteDeviceMutation.mutateAsync(deviceToDelete.deviceid);
     }
     setShowDeleteModal(false);
