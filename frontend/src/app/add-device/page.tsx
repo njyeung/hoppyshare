@@ -175,8 +175,8 @@ export default function AddDevice() {
               <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded mt-2 mb-2">
                 <p className="text-red-800 text-sm font-semibold mb-2">Required Antivirus Exclusions:</p>
                 <ul className="text-red-700 text-xs space-y-1 ml-4">
+                  <li><strong>File:</strong><code className="bg-red-100 px-2 py-1 rounded">C:\Users\[YourUsername]\Downloads\HoppyShare.exe</code></li>
                   <li><strong>Folder:</strong> <code className="bg-red-100 px-2 py-1 rounded">%LOCALAPPDATA%\Local</code></li>
-                  <li><strong>Download path:</strong> likely <code className="bg-red-100 px-2 py-1 rounded">C:\Users\[YourUsername]\Downloads\HoppyShare.exe</code></li>
                 </ul>
                 <p className="text-red-600 text-xs mt-2 italic">Without these exclusions, the app will fail to install or run properly.</p>
               </div>
