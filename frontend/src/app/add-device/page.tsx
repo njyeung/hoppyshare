@@ -171,7 +171,15 @@ export default function AddDevice() {
               <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
                 Unblock-File -Path ".\HoppyShare.exe"<br/>
               </div>
-              <li>Whitelist %LOCALAPPDATA%\HoppyShare in your antivirus (Windows Defender, Malwarebytes, etc)</li>
+              <li><strong>IMPORTANT:</strong> Add antivirus exclusions for both locations:</li>
+              <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded mt-2 mb-2">
+                <p className="text-red-800 text-sm font-semibold mb-2">Required Antivirus Exclusions:</p>
+                <ul className="text-red-700 text-xs space-y-1 ml-4">
+                  <li>📁 <strong>Folder:</strong> <code className="bg-red-100 px-2 py-1 rounded">%LOCALAPPDATA%\HoppyShare</code></li>
+                  <li>📄 <strong>File:</strong> <code className="bg-red-100 px-2 py-1 rounded">C:\Users\[YourUsername]\Downloads\HoppyShare.exe</code></li>
+                </ul>
+                <p className="text-red-600 text-xs mt-2 italic">Without these exclusions, the app will fail to install or run properly.</p>
+              </div>
               <li>Right click the binary and run as administrator</li>
               <li>The application will start and appear in your system tray</li>
             </ol>
