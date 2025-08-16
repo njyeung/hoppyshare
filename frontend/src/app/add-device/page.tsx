@@ -203,14 +203,13 @@ export default function AddDevice() {
           <div className="max-w-4xl mx-auto">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-secondary-darker mb-2">New Device</h1>
-              <p className="text-secondary-dark">Select your operating system</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
               {/* macOS */}
               <button
                 onClick={() => handlePlatformSelect('MACOS')}
-                className={`flex flex-col items-center p-6 rounded-xl border-2 transition-all duration-200 ${
+                className={`hover:cursor-pointer flex flex-col items-center p-6 rounded-xl border-2 transition-all duration-200 ${
                   selectedPlatform === 'MACOS'
                     ? 'border-primary bg-primary-light/90 text-secondary-darker'
                     : 'border-secondary-light hover:border-secondary-dark bg-white text-secondary-dark'
@@ -232,7 +231,7 @@ export default function AddDevice() {
               {/* Linux */}
               <button
                 onClick={() => handlePlatformSelect('LINUX')}
-                className={`flex flex-col items-center p-6 rounded-xl border-2 transition-all duration-200 ${
+                className={`hover:cursor-pointer flex flex-col items-center p-6 rounded-xl border-2 transition-all duration-200 ${
                   selectedPlatform === 'LINUX'
                     ? 'border-primary bg-primary-light/90 text-secondary-darker'
                     : 'border-secondary-light hover:border-secondary-dark bg-white text-secondary-dark'
@@ -254,7 +253,7 @@ export default function AddDevice() {
               {/* Windows */}
               <button
                 onClick={() => handlePlatformSelect('WINDOWS')}
-                className={`flex flex-col items-center p-6 rounded-xl border-2 transition-all duration-200 ${
+                className={`hover:cursor-pointer flex flex-col items-center p-6 rounded-xl border-2 transition-all duration-200 ${
                   selectedPlatform === 'WINDOWS'
                     ? 'border-primary bg-primary-light/90 text-secondary-darker'
                     : 'border-secondary-light hover:border-secondary-dark bg-white text-secondary-dark'
@@ -285,7 +284,7 @@ export default function AddDevice() {
             <div className="flex justify-between items-center mb-12">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="px-4 py-2 rounded-lg bg-primary-muted/80 hover:underline text-white transition-colors"
+                className="hover:cursor-pointer px-4 py-2 rounded-lg bg-primary-muted/80 hover:underline text-white transition-colors"
               >
                 Back to Dashboard
               </button>
@@ -293,7 +292,7 @@ export default function AddDevice() {
               <button
                 onClick={handleAddDevice}
                 disabled={!selectedPlatform || isLoading}
-                className={`px-8 py-3 rounded-lg transition-all ${
+                className={`hover:cursor-pointer px-8 py-3 rounded-lg transition-all ${
                   selectedPlatform && !isLoading
                     ? 'bg-secondary hover:bg-secondary-dark text-white'
                     : 'bg-primary text-secondary-darker cursor-not-allowed'

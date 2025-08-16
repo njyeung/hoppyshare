@@ -208,7 +208,7 @@ export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequ
             <button
               type="button"
               onClick={handleDeleteClick}
-              className="px-6 py-2 bg-secondary-dark hover:bg-secondary-darker text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-secondary-dark text-sm"
+              className="hover:cursor-pointer px-6 py-2 bg-secondary-dark hover:bg-secondary-darker text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-secondary-dark text-sm"
             >
               Delete Device
             </button>

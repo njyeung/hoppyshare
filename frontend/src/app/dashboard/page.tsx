@@ -170,7 +170,7 @@ export default function Dashboard() {
             // Has devices - show normal layout
             <>
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-3xl text-secondary-darker">
+                <h2 className="font-bold text-3xl text-secondary-darker">
                   Devices
                 </h2>
                 <button 

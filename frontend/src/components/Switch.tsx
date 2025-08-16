@@ -16,7 +16,7 @@ export default function Switch({ checked, onChange, label, description, variant 
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-secondary ${bgColor}`}
+        className={`relative inline-flex h-6 w-11 hover:cursor-pointer flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-secondary ${bgColor}`}
       >
         <span
           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
