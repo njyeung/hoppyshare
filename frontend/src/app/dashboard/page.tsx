@@ -8,7 +8,7 @@ import DeviceAccordion from "@/components/DeviceAccordion";
 import WaveBackground from "@/components/WaveBackground";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import { Device, DeviceSettings } from "@/types/device";
-import { apiGet, apiDelete } from "@/lib/api";
+import { apiGet, apiDelete, apiPut } from "@/lib/api";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -69,10 +69,6 @@ export default function Dashboard() {
     }
   }, [devices.length]);
 
-  const handleSettingsChange = (deviceId: string, newSettings: DeviceSettings) => {
-    console.log('Settings change requested for device:', deviceId, newSettings);
-  };
-
   const handleDeleteRequest = (device: Device) => {
     setDeviceToDelete(device);
     setShowDeleteModal(true);
@@ -85,7 +81,16 @@ export default function Dashboard() {
 
   const handleDeleteConfirm = async () => {
     if (deviceToDelete) {
-      handleSettingsChange(deviceToDelete.deviceid, { ...deviceToDelete.settings, destroy: true });
+      // Set destroy flag to trigger client self-destruction
+      try {
+        await apiPut(`https://en43r23fua.execute-api.us-east-2.amazonaws.com/prod/api/settings/${deviceToDelete.deviceid}`, {
+          new_settings: { ...deviceToDelete.settings, destroy: true }
+        });
+      } catch (error) {
+        console.error('Error setting destroy flag:', error);
+      }
+      
+      // Delete the device record
       await deleteDeviceMutation.mutateAsync(deviceToDelete.deviceid);
     }
     setShowDeleteModal(false);
@@ -205,7 +210,6 @@ export default function Dashboard() {
                   <DeviceAccordion
                     key={device.deviceid}
                     device={device}
-                    onSettingsChange={handleSettingsChange}
                     onDeleteRequest={handleDeleteRequest}
                     isExpanded={expandedDevice === device.deviceid}
                     onToggleExpansion={handleToggleExpansion}
