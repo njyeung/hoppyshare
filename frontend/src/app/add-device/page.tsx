@@ -167,12 +167,11 @@ export default function AddDevice() {
             <h3 className="text-lg font-semibold text-secondary-darker mb-4">Windows Setup Instructions</h3>
             <ol className="list-decimal list-inside space-y-2 text-secondary-dark">
               <li>Download the HoppyShare client for Windows</li>
-              <li>Open PowerShell as Administrator in the download folder</li>
-              <li>Remove Windows quarantine and run:</li>
+              <li>Open PowerShell as Administrator in the downloads folder and run:</li>
               <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
                 Unblock-File -Path ".\HoppyShare.exe"<br/>
-                .\HoppyShare.exe
               </div>
+              <li>Right click the binary and run as administrator</li>
               <li>The application will start and appear in your system tray</li>
             </ol>
             <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-400 rounded">
