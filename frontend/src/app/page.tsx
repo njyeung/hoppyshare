@@ -11,28 +11,6 @@ import Footer from '@/components/Footer';
 import WaveBackground from '@/components/WaveBackground';
 
 export default function HomePage() {
-  const router = useRouter();
-  const { user, loading } = useAuth();
-
-  useEffect(() => {
-    if (!loading && user) {
-      router.replace('/dashboard');
-    }
-  }, [user, loading, router]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-lg text-secondary-darker">Loading...</div>
-      </div>
-    );
-  }
-
-  // Only show landing page if user is not authenticated
-  if (user) {
-    return null; // Will redirect to dashboard
-  }
-
   return (
     <div className="bg-white min-h-screen">
       <LandingNavbar />
