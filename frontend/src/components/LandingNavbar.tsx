@@ -20,12 +20,35 @@ export default function LandingNavbar(){
             Github
           </Link>
           {user ? (
-            <button
-              onClick={signOut}
-              className="text-secondary-darker hover:underline"
-            >
-              Logout
-            </button>
+            <div className="flex items-center space-x-2">
+              {user?.user_metadata?.avatar_url ? (
+                <img
+                  src={user.user_metadata.avatar_url}
+                  alt="Profile"
+                  className="w-6 h-6 rounded-full"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (fallback) {
+                      fallback.style.display = 'flex';
+                    }
+                  }}
+                />
+              ) : null}
+              <div 
+                className="w-6 h-6 rounded-full bg-secondary-darker text-white flex items-center justify-center text-xs font-medium"
+                style={{ display: user?.user_metadata?.avatar_url ? 'none' : 'flex' }}
+              >
+                {user?.email?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
+              <button
+                onClick={signOut}
+                className="text-secondary-darker hover:underline"
+              >
+                Logout
+              </button>
+            </div>
           ) : (
             <Link
               href={"/auth"}
