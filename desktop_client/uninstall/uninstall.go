@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
-	"syscall"
 
 	"github.com/emersion/go-autostart"
 	"github.com/zalando/go-keyring"
@@ -62,7 +60,7 @@ func removeStartupBinary() error {
 		scriptPath = filepath.Join(os.Getenv("TEMP"), "uninstall_hoppyshare.bat")
 		scriptText = fmt.Sprintf(`@echo off
 		setlocal enabledelayedexpansion
-		set PID="%d"
+		set PID=%d
 		set BIN="%s"
 		set DIR="%s"
 		set LOG="%s"
@@ -70,7 +68,8 @@ func removeStartupBinary() error {
 		echo [%%DATE%% %%TIME%%] Starting uninstall PID=%%PID%% BIN=%%BIN%% > %%LOG%%
 
 		:waitloop
-		for /f "tokens=1" %%a in ('powershell -NoProfile -Command "try { Get-Process -Id %%%%%%%%PID%%%%%%%% | Out-Null; Write-Output RUNNING } catch { Write-Output GONE }"') do set STATE=%%a
+		powershell -NoProfile -Command "try { Get-Process -Id %%PID%% ^| Out-Null; Write-Output RUNNING } catch { Write-Output GONE }" > "%TEMP%\hoppyshare_state.txt"
+		set /p STATE=<"%TEMP%\hoppyshare_state.txt"
 		if /I "%%STATE%%"=="RUNNING" (
 		ping -n 2 127.0.0.1 >nul
 		goto waitloop
@@ -123,38 +122,13 @@ func removeStartupBinary() error {
 	}
 
 	// Check if we can find binary at expected path
-	if _, err := os.Stat(binaryPath); err != nil {
-		if os.IsNotExist(err) {
-			notification.Notification("Could not find binary in expected location")
-			return nil
-		}
-		notification.Notification("Stat failed for binary path")
-		return nil
-	}
-
-	// Create the cleanup script
 	if err := os.WriteFile(scriptPath, []byte(scriptText), 0755); err != nil {
+		notification.Notification("Binary not found in expected path")
 		return fmt.Errorf("failed to create cleanup script: %v", err)
 	}
 
 	// Execute the cleanup script in the background
-	var cmd *exec.Cmd
-	switch runtime.GOOS {
-	case "windows":
-		cmd := exec.Command(
-			"powershell",
-			"-NoProfile",
-			"-ExecutionPolicy", "Bypass",
-			"-WindowStyle", "Hidden",
-			"-File", scriptPath,
-		)
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-		_ = cmd.Start()
-	default:
-		cmd = exec.Command("sh", "-c", scriptPath+" &")
-	}
-
-	if err := cmd.Start(); err != nil {
+	if err := startCleanupScript(scriptPath); err != nil {
 		_ = os.Remove(scriptPath)
 		return fmt.Errorf("failed to start cleanup script: %v", err)
 	}
