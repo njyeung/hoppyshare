@@ -27,7 +27,7 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, deviceN
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-secondary-dark text-secondary-darker rounded-lg 
+            className="flex-1 px-4 py-2 border border-secondary-dark text-secondary-darker rounded-lg hover:cursor-pointer
             hover:bg-secondary-darker hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-secondary peer"
           >
             Cancel
@@ -35,7 +35,7 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, deviceN
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 px-4 py-2 bg-secondary-dark hover:bg-secondary-darker text-white rounded-lg 
+            className="flex-1 px-4 py-2 bg-secondary-dark hover:bg-secondary-darker text-white rounded-lg hover:cursor-pointer
             transition-colors focus:outline-none focus:ring-2 focus:ring-secondary-dark font-medium peer-hover:bg-white peer-hover:text-secondary-darker peer-hover:border peer-hover:border-secondary-dark"
           >
             Delete

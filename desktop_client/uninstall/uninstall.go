@@ -3,8 +3,10 @@ package uninstall
 import (
 	"desktop_client/notification"
 	"errors"
+	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 
@@ -48,25 +50,59 @@ func unregisterStartup() error {
 }
 
 func removeStartupBinary() error {
-	var path string
+	var binaryPath string
+	var scriptPath string
+	var scriptContent string
 
 	switch runtime.GOOS {
 	case "windows":
-		path = filepath.Join(os.Getenv("LOCALAPPDATA"), "HoppyShare", "HoppyShare.exe")
-	case "darwin":
-		path = filepath.Join(os.Getenv("HOME"), "Library", "Application Support", "HoppyShare", "HoppyShare")
-	case "linux":
-		path = filepath.Join(os.Getenv("HOME"), ".local", "bin", "hoppyshare")
+		binaryPath = filepath.Join(os.Getenv("LOCALAPPDATA"), "HoppyShare", "HoppyShare.exe")
+		scriptPath = filepath.Join(os.Getenv("TEMP"), "uninstall_hoppyshare.bat")
+		scriptContent = fmt.Sprintf(`@echo off
+			timeout /t 2 /nobreak > nul
+			del /f /q "%s" 2>nul
+			rmdir "%s" 2>nul
+			del /f /q "%%~f0" 2>nul`, binaryPath, filepath.Dir(binaryPath))
+	case "darwin", "linux":
+		if runtime.GOOS == "darwin" {
+			binaryPath = filepath.Join(os.Getenv("HOME"), "Library", "Application Support", "HoppyShare", "HoppyShare")
+		} else {
+			binaryPath = filepath.Join(os.Getenv("HOME"), ".local", "bin", "hoppyshare")
+		}
+		scriptPath = filepath.Join(os.TempDir(), "uninstall_hoppyshare.sh")
+		scriptContent = fmt.Sprintf(`#!/bin/bash
+			sleep 2
+			rm -f "%s"
+			rmdir "%s" 2>/dev/null
+			rm -f "$0"`, binaryPath, filepath.Dir(binaryPath))
 	default:
 		return errors.New("unsupported OS")
 	}
 
-	err := os.Remove(path)
-	if os.IsNotExist(err) {
+	// Check if binary exists
+	if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
 		return nil
 	}
 
-	return err
+	// Create the cleanup script
+	if err := os.WriteFile(scriptPath, []byte(scriptContent), 0755); err != nil {
+		return fmt.Errorf("failed to create cleanup script: %v", err)
+	}
+
+	// Execute the cleanup script in the background
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/C", "start", "/B", scriptPath)
+	} else {
+		cmd = exec.Command("sh", "-c", scriptPath+" &")
+	}
+
+	if err := cmd.Start(); err != nil {
+		os.Remove(scriptPath) // Clean up script if we can't run it
+		return fmt.Errorf("failed to start cleanup script: %v", err)
+	}
+
+	return nil
 }
 
 func clearKeychain() error {
