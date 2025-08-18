@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"syscall"
 
 	"github.com/emersion/go-autostart"
 	"github.com/zalando/go-keyring"
@@ -52,53 +53,109 @@ func unregisterStartup() error {
 func removeStartupBinary() error {
 	var binaryPath string
 	var scriptPath string
-	var scriptContent string
-
+	var scriptText string
+	var pid = os.Getpid()
+	var debugLogPath = filepath.Join(os.TempDir(), "hoppyshare_uninstall.log")
 	switch runtime.GOOS {
 	case "windows":
 		binaryPath = filepath.Join(os.Getenv("LOCALAPPDATA"), "HoppyShare", "HoppyShare.exe")
 		scriptPath = filepath.Join(os.Getenv("TEMP"), "uninstall_hoppyshare.bat")
-		scriptContent = fmt.Sprintf(`@echo off
-			timeout /t 2 /nobreak > nul
-			del /f /q "%s" 2>nul
-			rmdir "%s" 2>nul
-			del /f /q "%%~f0" 2>nul`, binaryPath, filepath.Dir(binaryPath))
-	case "darwin", "linux":
-		if runtime.GOOS == "darwin" {
-			binaryPath = filepath.Join(os.Getenv("HOME"), "Library", "Application Support", "HoppyShare", "HoppyShare")
-		} else {
+		scriptText = fmt.Sprintf(`@echo off
+		setlocal enabledelayedexpansion
+		set PID="%d"
+		set BIN="%s"
+		set DIR="%s"
+		set LOG="%s"
+
+		echo [%%DATE%% %%TIME%%] Starting uninstall PID=%%PID%% BIN=%%BIN%% > %%LOG%%
+
+		:waitloop
+		for /f "tokens=1" %%a in ('powershell -NoProfile -Command "try { Get-Process -Id %%%%%%%%PID%%%%%%%% | Out-Null; Write-Output RUNNING } catch { Write-Output GONE }"') do set STATE=%%a
+		if /I "%%STATE%%"=="RUNNING" (
+		ping -n 2 127.0.0.1 >nul
+		goto waitloop
+		)
+
+		echo [%%DATE%% %%TIME%%] Parent gone; deleting file... >> %%LOG%%
+		del /f /q %%BIN%% >> %%LOG%% 2>&1
+
+		echo [%%DATE%% %%TIME%%] Removing dir (best-effort)... >> %%LOG%%
+		rmdir /s /q %%DIR%% >> %%LOG%% 2>&1
+
+		echo [%%DATE%% %%TIME%%] Done. Self-delete. >> %%LOG%%
+		del "%%~f0"
+		`, pid, binaryPath, filepath.Dir(binaryPath), debugLogPath)
+	case "darwin":
+		binaryPath = filepath.Join(os.Getenv("HOME"), "Library", "Application Support", "HoppyShare", "HoppyShare")
+		fallthrough
+	case "linux":
+		if runtime.GOOS == "linux" {
 			binaryPath = filepath.Join(os.Getenv("HOME"), ".local", "bin", "hoppyshare")
 		}
 		scriptPath = filepath.Join(os.TempDir(), "uninstall_hoppyshare.sh")
-		scriptContent = fmt.Sprintf(`#!/bin/bash
-			sleep 2
-			rm -f "%s"
-			rmdir "%s" 2>/dev/null
-			rm -f "$0"`, binaryPath, filepath.Dir(binaryPath))
+
+		// Use kill -0 to probe PID existence, then remove; log for debugging
+		scriptText = fmt.Sprintf(`#!/usr/bin/env bash
+		PID=%d
+		BIN="%s"
+		DIR="%s"
+		LOG="%s"
+
+		printf '[%%s] Starting uninstall helper. PID=%d BIN=%q\n' "$(date)" "$PID" "$BIN" > "$LOG"
+
+		# Wait for parent PID to exit
+		while kill -0 "$PID" 2>/dev/null; do
+		sleep 0.2
+		done
+
+		printf '[%%s] Parent gone; deleting file...\n' "$(date)" >> "$LOG"
+		rm -f "$BIN" >> "$LOG" 2>&1
+
+		printf '[%%s] Removing dir (best-effort)...\n' "$(date)" >> "$LOG"
+		rmdir "$DIR" >> "$LOG" 2>&1 || true
+
+		printf '[%%s] Done. Self-delete.\n' "$(date)" >> "$LOG"
+		rm -f "$0"
+		`, pid, binaryPath, filepath.Dir(binaryPath), debugLogPath)
+
 	default:
 		return errors.New("unsupported OS")
 	}
 
-	// Check if binary exists
-	if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
+	// Check if we can find binary at expected path
+	if _, err := os.Stat(binaryPath); err != nil {
+		if os.IsNotExist(err) {
+			notification.Notification("Could not find binary in expected location")
+			return nil
+		}
+		notification.Notification("Stat failed for binary path")
 		return nil
 	}
 
 	// Create the cleanup script
-	if err := os.WriteFile(scriptPath, []byte(scriptContent), 0755); err != nil {
+	if err := os.WriteFile(scriptPath, []byte(scriptText), 0755); err != nil {
 		return fmt.Errorf("failed to create cleanup script: %v", err)
 	}
 
 	// Execute the cleanup script in the background
 	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("cmd", "/C", "start", "/B", scriptPath)
-	} else {
+	switch runtime.GOOS {
+	case "windows":
+		cmd := exec.Command(
+			"powershell",
+			"-NoProfile",
+			"-ExecutionPolicy", "Bypass",
+			"-WindowStyle", "Hidden",
+			"-File", scriptPath,
+		)
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		_ = cmd.Start()
+	default:
 		cmd = exec.Command("sh", "-c", scriptPath+" &")
 	}
 
 	if err := cmd.Start(); err != nil {
-		os.Remove(scriptPath) // Clean up script if we can't run it
+		_ = os.Remove(scriptPath)
 		return fmt.Errorf("failed to start cleanup script: %v", err)
 	}
 
