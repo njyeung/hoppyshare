@@ -98,14 +98,14 @@ export default function Features() {
             const gradientOpacity = useTransform(
               cardScrollProgress,
               [0.1, 0.5, 0.9],
-              [0.05, 0.4, 0.05]
+              [0.1, 0.5, 0.1]
             );
             
             return (
             <motion.div
               key={title}
               ref={cardRef}
-              className="group relative overflow-hidden rounded-2xl border border-secondary-darker p-5 transition backdrop-blur-sm"
+              className="group relative overflow-hidden rounded-2xl border border-primary-muted p-5 transition backdrop-blur-sm"
               style={{
                 background: useTransform(
                   gradientOpacity,
@@ -117,8 +117,8 @@ export default function Features() {
               <div className="relative flex items-start gap-4">
                 {/* icon */}
                 <div className="shrink-0">
-                  <div className="grid h-12 w-12 place-items-center rounded-full border border-primary bg-gradient-to-br from-primary-light via-primary-light to-primary">
-                    <Icon className="h-6 w-6" aria-hidden />
+                  <div className="grid h-12 w-12 place-items-center rounded-full border border-primary-muted bg-gradient-to-br from-secondary-light via-secondary to-secondary">
+                    <Icon className="h-6 w-6 text-white" aria-hidden />
                   </div>
                 </div>
                 {/* text */}
