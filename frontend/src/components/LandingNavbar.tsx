@@ -13,21 +13,20 @@ export default function LandingNavbar(){
           <span className="text-secondary-darker font-bold text-2xl">HoppyShare</span>
         </Link>       
         <div className="flex items-center space-x-6">
-          {user ? (
+          {user && 
             <Link 
               href="/dashboard" 
               className="text-secondary-darker hover:underline"
             >
               Dashboard
             </Link>
-          ) : (
-            <Link 
-              href="/dashboard" 
-              className="text-secondary-darker hover:underline"
-            >
-              Github
-            </Link>
-          )}
+          } 
+          <Link 
+            href="/dashboard" 
+            className="text-secondary-darker hover:underline"
+          >
+            Github
+          </Link>
           {user ? (
             <div className="flex items-center space-x-2">
               {user?.user_metadata?.avatar_url ? (
