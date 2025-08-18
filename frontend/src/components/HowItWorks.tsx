@@ -1,3 +1,5 @@
+import WaveBackground from "./WaveBackground";
+
 export default function HowItWorks() {
   const steps = [
     {
@@ -18,7 +20,7 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section className="bg-primary-light/20 py-20">
+    <section id="howitworks" className="bg-primary-light/20 py-20 pb-32">
       <div className="container px-6 md:px-12 lg:px-28 mx-auto">
         <div className="max-w-4xl mx-auto">
           {/* Section Header */}

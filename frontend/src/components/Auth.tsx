@@ -43,7 +43,7 @@ export default function Auth() {
       <div className="space-y-4">
         <button
           onClick={signInWithGoogle}
-          className="flex items-center space-x-3 px-6 py-3 text-primary-light hover:text-white bg-secondary-darker border border-primary-muted rounded-lg hover:bg-secondary-dark transition-colors shadow-sm"
+          className="flex items-center space-x-3 px-6 py-3 text-primary-light hover:text-white bg-secondary-darker border border-primary-muted rounded-lg hover:bg-secondary-dark transition-colors hover:cursor-pointer"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path

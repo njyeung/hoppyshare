@@ -20,8 +20,9 @@ export default function Footer() {
               <h4 className="text-lg font-semibold text-primary mb-4">Quick Links</h4>
               <ul className="space-y-2">
                 <li><a href="#features" className="text-primary-light hover:text-primary transition-colors">Features</a></li>
-                <li><a href="/auth" className="text-primary-light hover:text-primary transition-colors">Get Started</a></li>
+                <li><a href="#howitworks" className="text-primary-light hover:text-primary transition-colors">How it works</a></li>
                 <li><a href="/dashboard" className="text-primary-light hover:text-primary transition-colors">Dashboard</a></li>
+                <li><a href="https://github.com/njyeung/hoppyshare" className="text-primary-light hover:text-primary transition-colors">Github</a></li>
               </ul>
             </div>
             
@@ -40,7 +41,7 @@ export default function Footer() {
           {/* Bottom Border */}
           <div className="border-t border-secondary-dark mt-8 pt-8 text-center">
             <p className="text-primary-muted">
-              © 2024 HoppyShare. Built for privacy and security.
+              HoppyShare. Built for snappy sharing with privacy and security.
             </p>
           </div>
         </div>

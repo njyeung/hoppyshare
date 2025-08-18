@@ -28,7 +28,7 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row gap-2 justify-center md:justify-start">
               
               <button
-                onClick={() => router.push('#features')}
+                onClick={() => router.push('https://github.com/njyeung/hoppyshare')}
                 className="peer order-2 px-4 py-2 sm:px-5 sm:py-3 border-2 border-secondary text-secondary hover:bg-secondary hover:text-white rounded-lg text-lg font-semibold transition-all hover:cursor-pointer"
               >
                 Open Source

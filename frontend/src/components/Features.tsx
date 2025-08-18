@@ -117,7 +117,7 @@ export default function Features() {
               <div className="relative flex items-start gap-4">
                 {/* icon */}
                 <div className="shrink-0">
-                  <div className="grid h-12 w-12 place-items-center rounded-full border border-primary-muted bg-gradient-to-br from-secondary-light via-secondary to-secondary">
+                  <div className="grid h-12 w-12 place-items-center rounded-full border border-primary-muted bg-gradient-to-br from-secondary via-primary to-primary-light">
                     <Icon className="h-6 w-6 text-white" aria-hidden />
                   </div>
                 </div>

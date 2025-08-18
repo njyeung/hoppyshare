@@ -22,7 +22,7 @@ export default function LandingNavbar(){
             </Link>
           } 
           <Link 
-            href="/dashboard" 
+            href="https://github.com/njyeung/hoppyshare" 
             className="text-secondary-darker hover:underline"
           >
             Github
