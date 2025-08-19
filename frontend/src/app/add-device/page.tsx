@@ -119,10 +119,10 @@ export default function AddDevice() {
                 xattr -d com.apple.quarantine ./HoppyShare && chmod +x ./HoppyShare
               </div>
               <li>Run application as superuser:</li>
-              <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
+              <div className="bg-gray-900 mb-2 text-primary-light p-3 rounded mt-2 font-mono text-sm">
                 sudo ./HoppyShare
               </div>
-              <p className='pl-7 text-sm text-primary-muted'>Note: The executable requires elevated permissions to relocate itself.</p>
+              <p className='pl-7 text-sm text-primary-muted mb-4'>Note: The executable requires elevated permissions to relocate itself.</p>
               <li>The application will start and appear in your system tray</li>
             </ol>
             <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-400 rounded">
@@ -148,10 +148,10 @@ export default function AddDevice() {
                 chmod +x HoppyShare
               </div>
               <li>Run the application as superuser:</li>
-              <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
+              <div className="bg-gray-900 mb-2 text-primary-light p-3 rounded mt-2 font-mono text-sm">
                 sudo ./HoppyShare
               </div>
-              <p className='pl-7 text-sm text-primary-muted'>Note: The executable requires elevated permissions to relocate itself.</p>
+              <p className='pl-7 text-sm text-primary-muted mb-4'>Note: The executable requires elevated permissions to relocate itself.</p>
               <li>The application will start and appear in your system tray</li>
               <p className='pl-7 text-sm text-primary-muted'>Note: System tray support requires a desktop environment like GNOME, KDE, or XFCE. Window managers like Hyprland may not display the system tray icon.</p>
 
