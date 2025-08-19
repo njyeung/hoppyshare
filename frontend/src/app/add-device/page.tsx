@@ -114,9 +114,13 @@ export default function AddDevice() {
             <ol className="list-decimal list-inside space-y-2 text-secondary-dark">
               <li>Download the HoppyShare client for MacOS</li>
               <li>Open Terminal to the downloaded directory</li> 
-              <li>Remove quarantine and start the executable:</li>
+              <li>Remove quarantine and make executable:</li>
               <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
-                xattr -d com.apple.quarantine ./HoppyShare && chmod +x ./HoppyShare && ./HoppyShare
+                xattr -d com.apple.quarantine ./HoppyShare && chmod +x ./HoppyShare
+              </div>
+              <li>Run application as superuser:</li>
+              <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
+                sudo ./HoppyShare
               </div>
               <li>The application will start and appear in your system tray</li>
             </ol>
@@ -142,9 +146,9 @@ export default function AddDevice() {
               <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
                 chmod +x HoppyShare
               </div>
-              <li>Run the application:</li>
+              <li>Run the application as superuser:</li>
               <div className="bg-gray-900 mb-4 text-primary-light p-3 rounded mt-2 font-mono text-sm">
-                ./HoppyShare
+                sudo ./HoppyShare
               </div>
               <li>The application will start and appear in your system tray</li>
               <p className='pl-7 text-sm text-primary-muted'>Note: System tray support requires a desktop environment like GNOME, KDE, or XFCE. Window managers like Hyprland may not display the system tray icon.</p>
