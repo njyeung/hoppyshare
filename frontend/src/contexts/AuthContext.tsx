@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const [initialRedirect, setInitialRedirect] = useState(false)
+  // const [initialRedirect, setInitialRedirect] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
-      setInitialRedirect(true)
+      // setInitialRedirect(true)
     }
 
     getSession()
@@ -39,16 +39,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null)
         setLoading(false)
         
-        if (!initialRedirect) {
-          return
-        }
+        // if (!initialRedirect) {
+        //   return
+        // }
         
         if (event === 'SIGNED_IN' && session) {
           router.push('/dashboard')
-          setInitialRedirect(false)
+          // setInitialRedirect(false)
         } else if (event === 'SIGNED_OUT') {
           router.push('/')
-          setInitialRedirect(false)
+          // setInitialRedirect(false)
         }
       }
     )
