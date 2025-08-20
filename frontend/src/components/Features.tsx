@@ -64,13 +64,7 @@ export default function Features() {
 
       <div className="container mx-auto px-6 md:px-12 lg:px-28">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="mx-auto max-w-3xl text-center mb-14"
-        >
+        <div className="mx-auto max-w-3xl text-center mb-14">
           <h2 className="mt-4 text-2xl md:text-3xl font-bold tracking-tight text-secondary-darker">
             Why choose <span className="underline decoration-primary">HoppyShare</span>?
           </h2>
@@ -78,14 +72,10 @@ export default function Features() {
             A lightweight, cross‑platform handoff for the things you move all day — code, screenshots,
             snippets, and small files — all without the cloud detour.
           </p>
-        </motion.div>
+        </div>
 
         {/* Feature grid */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1}}
-          viewport={{ once: true }}
-          transition={{ delay: 0.5, duration: 0.5, ease: "easeOut" }}
+        <div
           className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
         >
           {features.map(({ title, blurb, icon: Icon, kicker }, i) => {
@@ -131,18 +121,14 @@ export default function Features() {
             </motion.div>
             );
           })}
-        </motion.div>
+        </div>
 
         {/* Footnote / trust line */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3, duration: 0.5 }}
+        <p
           className="mx-auto mt-10 max-w-3xl text-center text-sm text-primary-muted"
         >
           Fast • Convenient • Safe
-        </motion.p>
+        </p>
       </div>
     </section>
   );
