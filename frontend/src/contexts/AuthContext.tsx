@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const [initialAuthComplete, setInitialAuthComplete] = useState(false)
+  const [initialRedirect, setInitialRedirect] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
-      setInitialAuthComplete(true)
+      setInitialRedirect(true)
     }
 
     getSession()
@@ -39,20 +39,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null)
         setLoading(false)
         
-        if (!initialAuthComplete) {
+        if (!initialRedirect) {
           return
         }
         
         if (event === 'SIGNED_IN' && session) {
           router.push('/dashboard')
+          setInitialRedirect(false)
         } else if (event === 'SIGNED_OUT') {
           router.push('/')
+          setInitialRedirect(false)
         }
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [router, initialAuthComplete])
+  }, [router])
 
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
