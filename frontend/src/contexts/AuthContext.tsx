@@ -39,12 +39,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null)
         setLoading(false)
         
-        // Only redirect for actual auth events, not initial session restoration
         if (!hasHandledInitialAuth) {
           return
         }
         
-        // Only redirect on actual sign in/out events, not session changes
         if (event === 'SIGNED_IN' && session) {
           router.push('/dashboard')
         } else if (event === 'SIGNED_OUT') {
