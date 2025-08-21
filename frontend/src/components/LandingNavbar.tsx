@@ -22,6 +22,12 @@ export default function LandingNavbar(){
             </Link>
           } 
           <Link 
+            href="/faq" 
+            className="text-secondary-darker hover:underline"
+          >
+            FAQ
+          </Link>
+          <Link 
             href="https://github.com/njyeung/hoppyshare" 
             className="text-secondary-darker hover:underline"
           >

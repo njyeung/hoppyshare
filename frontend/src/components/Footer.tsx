@@ -23,6 +23,7 @@ export default function Footer() {
                 <li><a href="#howitworks" className="text-primary-light hover:text-primary transition-colors">How it works</a></li>
                 <li><a href="/dashboard" className="text-primary-light hover:text-primary transition-colors">Dashboard</a></li>
                 <li><a href="https://github.com/njyeung/hoppyshare" className="text-primary-light hover:text-primary transition-colors">Github</a></li>
+                <li><a href="/faq" className="text-primary-light hover:text-primary transition-colors">FAQ</a></li>
               </ul>
             </div>
             

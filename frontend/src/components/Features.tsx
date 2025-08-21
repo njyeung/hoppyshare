@@ -11,19 +11,19 @@ export default function Features() {
     {
       title: "Blazing Fast",
       blurb:
-        "Instant handoff for text, screenshots, and files using a low‑latency MQTT backbone.",
+        "Instant handoff for text, screenshots, and files using a low-latency MQTT connection.",
       icon: Zap,
-      kicker: "Sub‑second feel, no cloud hop",
+      kicker: "Sub-second feel, no cloud hop",
     },
     {
-      title: "End‑to‑End Encrypted",
+      title: "End-to-End Encrypted",
       blurb:
-        "Your data is sealed on device with AES‑GCM and only your devices hold the keys.",
+        "Your data is sealed before ever leaving your device. Only your devices hold the keys.",
       icon: ShieldCheck,
       kicker: "mTLS + E2EE by default",
     },
     {
-      title: "True Cross‑Platform",
+      title: "True Cross-Platform",
       blurb:
         "Windows to macOS to Linux. Send a file on one device, save it on another. Copy an image on one device, paste natively on another.",
       icon: MonitorSmartphone,
@@ -32,7 +32,7 @@ export default function Features() {
     {
       title: "Offline via BLE",
       blurb:
-        "No Wi‑Fi? HoppyShare falls back to Bluetooth Low Energy for local, resilient transfer.",
+        "No Wi-Fi? HoppyShare falls back to Bluetooth Low Energy for local, resilient transfer.",
       icon: Bluetooth,
       kicker: "Keeps working when networks don't",
     },
@@ -46,9 +46,9 @@ export default function Features() {
     {
       title: "Open Source",
       blurb:
-        "Transparent and auditable. Self‑host the broker, keep control of your infra.",
+        "Transparent and auditable. Self-host the broker, keep control of your infrastructure.",
       icon: Code2,
-      kicker: "No lock‑in, just code",
+      kicker: "No lock-in, just code",
     },
   ];
 
