@@ -20,7 +20,7 @@ export default function AuthCallback() {
         }
 
         if (data.session) {
-          return
+          router.push('/dashboard')
         } else {
           router.push('/auth')
         }

@@ -35,7 +35,7 @@ export default function Hero() {
               </button>
               
               <button
-                onClick={() => router.push('/auth')}
+                onClick={() => router.push('/dashboard')}
                 className="px-4 py-2 sm:px-5 sm:py-3 bg-secondary border-2 hover:bg-secondary-darker peer-hover:bg-white peer-hover:border-2 peer-hover:border-secondary peer-hover:text-secondary text-white rounded-lg text-lg font-semibold transition-all hover:cursor-pointer"
               >
                 Start For Free
