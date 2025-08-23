@@ -32,7 +32,7 @@ export default function Footer() {
               <h4 className="text-lg font-semibold text-primary mb-4">Technical</h4>
               <ul className="space-y-2">
                 <li><span className="text-primary-light">End-to-End Encryption</span></li>
-                <li><span className="text-primary-light">Self-Hosted Infrastructure</span></li>
+                <li><span className="text-primary-light">Open Source</span></li>
                 <li><span className="text-primary-light">Cross-Platform Native</span></li>
                 <li><span className="text-primary-light">Offline BLE Support</span></li>
               </ul>
