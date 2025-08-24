@@ -7,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import WaveBackground from "@/components/WaveBackground";
 import { apiPost } from "@/lib/api";
 
-type Platform = 'WINDOWS' | 'MACOS' | 'LINUX' | null;
+type Platform = 'ANDROID' | 'WINDOWS' | 'MACOS' | 'LINUX' | null;
 
 export default function AddDevice() {
   const router = useRouter();
@@ -15,11 +15,15 @@ export default function AddDevice() {
   const [isLoading, setIsLoading] = useState(false);
 
   const detectOS = (): Platform => {
-    if (typeof window === 'undefined') return 'MACOS'; // Default for SSR
+    if (typeof window === 'undefined') return 'MACOS';
     
     const userAgent = window.navigator.userAgent;
     const platform = window.navigator.platform;
     
+    if (/Android/i.test(userAgent) || /iPhone|iPad|iPod/i.test(userAgent)) {
+      router.push("/add-device/mobile")
+    }
+
     if (platform.toUpperCase().indexOf('MAC') >= 0 || userAgent.indexOf('Mac') >= 0) {
       return 'MACOS';
     } else if (platform.toUpperCase().indexOf('WIN') >= 0 || userAgent.indexOf('Windows') >= 0) {

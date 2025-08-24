@@ -9,7 +9,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
-class ShareReceiveActivity : AppCompatActivity() {
+class FileConfirmActivity : AppCompatActivity() {
     
     private lateinit var sharePreview: ImageView
     private lateinit var shareFileName: TextView
@@ -20,21 +20,17 @@ class ShareReceiveActivity : AppCompatActivity() {
         setContentView(R.layout.activity_share_receive)
         
         setupUI()
-        
-        when (intent?.action) {
-            Intent.ACTION_SEND -> handleSingleFile()
-            Intent.ACTION_SEND_MULTIPLE -> handleMultipleFiles()
-            else -> {
-                Toast.makeText(this, "Unsupported action", Toast.LENGTH_SHORT).show()
-                finish()
-            }
-        }
+        handleFileUri()
     }
     
     private fun setupUI() {
         sharePreview = findViewById(R.id.sharePreview)
         shareFileName = findViewById(R.id.shareFileName)
         shareFileSize = findViewById(R.id.shareFileSize)
+        
+        // Update title for file picker context
+        val titleText = findViewById<TextView>(R.id.titleText)
+        titleText.text = "Send via HoppyShare"
         
         val cancelButton = findViewById<Button>(R.id.cancelButton)
         val sendButton = findViewById<Button>(R.id.sendButton)
@@ -50,33 +46,16 @@ class ShareReceiveActivity : AppCompatActivity() {
         }
     }
     
-    private fun handleSingleFile() {
-        val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-        if (uri != null) {
+    private fun handleFileUri() {
+        val uriString = intent.getStringExtra("file_uri")
+        if (uriString != null) {
+            val uri = Uri.parse(uriString)
             val fileName = getFileName(uri)
             val fileSize = getFileSize(uri)
             
-            // Show file preview
             showFilePreview(uri, fileName, fileSize)
-            
         } else {
-            Toast.makeText(this, "No file received", Toast.LENGTH_SHORT).show()
-            finish()
-        }
-    }
-    
-    private fun handleMultipleFiles() {
-        val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
-        if (!uris.isNullOrEmpty()) {
-            // For now, just show the first file (we can enhance this later)
-            val firstUri = uris[0]
-            val fileName = "${uris.size} files selected"
-            val fileSize = getFileSize(firstUri)
-            
-            showFilePreview(firstUri, fileName, fileSize)
-            
-        } else {
-            Toast.makeText(this, "No files received", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No file selected", Toast.LENGTH_SHORT).show()
             finish()
         }
     }

@@ -101,6 +101,24 @@ def add_device(uid, platform):
     if res.get("status_code")!= 200:
         return error_response("Failed to set up device settings")
 
+    # Simply return certs and keys for mobile
+    if platform == "ANDROID":
+        # Get server CA from s3
+        try:
+            s3 = boto3.client("s3")
+            ca_response = s3.get_object(Bucket="hoppyshare-binaries", Key="ca.crt")
+            ca_cert = ca_response["Body"].read().decode('utf-8')
+        except Exception as e:
+            return error_response("Failed to load CA certificate")
+        
+        return success_response({
+            "cert": cert, 
+            "key": key,
+            "ca": ca_cert,
+            "group_key": encrypted_group_key.hex(),
+            "device_id": device_id
+        })
+
     # Build binary and return it
     binary, enc_key_b64 = build_binary(platform, device_id, cert, key, encrypted_group_key)
     if binary is None or enc_key_b64 is None:

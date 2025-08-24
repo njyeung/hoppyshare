@@ -58,7 +58,7 @@ export default function LandingNavbar(){
               </div>
               <button
                 onClick={signOut}
-                className="text-secondary-darker hover:underline"
+                className="text-secondary-darker hover:underline hover:cursor-pointer"
               >
                 Logout
               </button>
@@ -66,7 +66,7 @@ export default function LandingNavbar(){
           ) : (
             <Link
               href={"/auth"}
-              className="text-secondary-darker hover:underline"
+              className="text-secondary-darker hover:underline hover:cursor-pointer"
             >
               Login
             </Link>

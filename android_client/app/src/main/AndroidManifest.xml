@@ -36,6 +36,11 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
+        
+        <activity
+            android:name=".FileConfirmActivity"
+            android:exported="false"
+            android:theme="@style/Theme.HoppyShare" />
     </application>
 
 </manifest>

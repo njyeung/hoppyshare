@@ -1,10 +1,10 @@
 package com.example.hoppyshare
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -47,47 +47,9 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun handleSelectedFile(uri: Uri) {
-        val fileName = getFileName(uri)
-        val fileSize = getFileSize(uri)
-        
-        statusText.text = "Selected: $fileName (${formatFileSize(fileSize)})"
-        
-        Toast.makeText(
-            this,
-            "Would send: $fileName via HoppyShare MQTT",
-            Toast.LENGTH_LONG
-        ).show()
-        
-        // TODO: Implement actual file sending via MQTT
-    }
-    
-    private fun getFileName(uri: Uri): String {
-        var fileName = "Unknown file"
-        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-            if (nameIndex != -1 && cursor.moveToFirst()) {
-                fileName = cursor.getString(nameIndex) ?: fileName
-            }
-        }
-        return fileName
-    }
-    
-    private fun getFileSize(uri: Uri): Long {
-        var fileSize = 0L
-        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            val sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
-            if (sizeIndex != -1 && cursor.moveToFirst()) {
-                fileSize = cursor.getLong(sizeIndex)
-            }
-        }
-        return fileSize
-    }
-    
-    private fun formatFileSize(bytes: Long): String {
-        return when {
-            bytes >= 1024 * 1024 -> "${bytes / (1024 * 1024)}MB"
-            bytes >= 1024 -> "${bytes / 1024}KB" 
-            else -> "${bytes}B"
-        }
+        // Launch the confirmation activity with the selected file
+        val intent = Intent(this, FileConfirmActivity::class.java)
+        intent.putExtra("file_uri", uri.toString())
+        startActivity(intent)
     }
 }
