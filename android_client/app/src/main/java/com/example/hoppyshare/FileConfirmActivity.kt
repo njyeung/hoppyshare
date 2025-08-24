@@ -114,13 +114,8 @@ class FileConfirmActivity : AppCompatActivity() {
                 }
                 
                 android.util.Log.d("FileConfirm", "File data read successfully, size: ${fileData.size} bytes")
-                
-                // Publish to MQTT
-                val topic = "users/${Config.deviceId}/notes"
-                android.util.Log.d("FileConfirm", "Publishing to topic: $topic")
-                android.util.Log.d("FileConfirm", "Payload size: ${fileData.size}, mimeType: $mimeType, fileName: $fileName")
-                
-                val success = mqttClient.publish(topic, fileData, mimeType, fileName)
+
+                val success = mqttClient.publish(fileData, mimeType, fileName)
                 
                 android.util.Log.d("FileConfirm", "Publish result: $success")
                 

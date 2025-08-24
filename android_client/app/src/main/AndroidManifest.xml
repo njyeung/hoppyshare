@@ -57,6 +57,9 @@
                 <data android:scheme="hoppyshare" android:host="setup" />
             </intent-filter>
         </activity>
+        
+        <!-- MQTT Service for Android -->
+        <service android:name="org.eclipse.paho.android.service.MqttService" />
     </application>
 
 </manifest>

@@ -26,12 +26,12 @@ import android.widget.Toast
 class MqttClient(private val context: Context) {
     private var client: IMqttClient? = null
     private var clientId: String = ""
-    
+
     private val lastMessageMutex = Mutex()
     private var lastMessage: LastMessage? = null
-    
+
     private var onMessageCallback: (() -> Unit)? = null
-    
+
     data class LastMessage(
         val filename: String,
         val contentType: String,
@@ -57,26 +57,28 @@ class MqttClient(private val context: Context) {
             return result
         }
     }
-    
+
     suspend fun connect(): String? {
         if (!Config.loadFromPreferences(context)) {
             Log.e("MqttClient", "Config not loaded, cannot connect")
             return null
         }
-        
+
         return try {
             val sslContext = createSSLContext()
-            
+
             // Extract client ID from certificate
             val certFactory = CertificateFactory.getInstance("X.509")
             val cert = certFactory.generateCertificate(
                 ByteArrayInputStream(Config.certPem.toByteArray())
             ) as X509Certificate
             clientId = cert.subjectX500Principal.name.substringAfter("CN=").substringBefore(",")
-            
-            val fullClientId = "${clientId}-${System.currentTimeMillis()}"
-            
-            client = MqttClient("ssl://18.188.110.246:8883", fullClientId, MemoryPersistence())
+            Log.d("MqttClient", "Base client ID from cert: $clientId")
+
+            val fullClientId = "${clientId}-${System.currentTimeMillis() / 1000}"
+            Log.d("MqttClient", "Full client ID: $fullClientId")
+
+            client = org.eclipse.paho.client.mqttv3.MqttClient("ssl://18.188.110.246:8883", fullClientId, MemoryPersistence())
             
             val options = MqttConnectOptions().apply {
                 isCleanSession = true
@@ -101,8 +103,7 @@ class MqttClient(private val context: Context) {
             })
             
             client?.connect(options)
-            
-            // Subscribe to topics
+
             subscribe()
             
             Log.d("MqttClient", "Connected to MQTT as $clientId")
@@ -207,6 +208,7 @@ class MqttClient(private val context: Context) {
     }
     
     private fun handleNotesMessage(message: MqttMessage) {
+        Log.d("MqttClient", "NEW MESSAGE")
         try {
             val decoded = MqttCodec.decodeMessage(message.payload)
             
@@ -220,8 +222,7 @@ class MqttClient(private val context: Context) {
             CoroutineScope(Dispatchers.Main).launch {
                 cacheMessage(decoded.filename, decoded.type, decoded.payload)
             }
-            
-            Log.d("MqttClient", "Received ${decoded.filename} (${decoded.type}), ${decoded.payload.size} bytes")
+
         } catch (e: Exception) {
             Log.e("MqttClient", "Failed to decode message: ${e.message}", e)
         }
@@ -257,14 +258,7 @@ class MqttClient(private val context: Context) {
         onMessageCallback = callback
     }
     
-    suspend fun publish(topic: String, data: ByteArray, contentType: String, filename: String): Boolean {
-        Log.d("MqttClient", "publish() called with:")
-        Log.d("MqttClient", "  topic: $topic")
-        Log.d("MqttClient", "  data size: ${data.size}")
-        Log.d("MqttClient", "  contentType: $contentType")
-        Log.d("MqttClient", "  filename: $filename")
-        Log.d("MqttClient", "  deviceId: ${Config.deviceId}")
-        
+    suspend fun publish(data: ByteArray, contentType: String, filename: String): Boolean {
         val mqttClient = client
         if (mqttClient == null) {
             Log.e("MqttClient", "Cannot publish: client is null")
@@ -276,22 +270,16 @@ class MqttClient(private val context: Context) {
             return false
         }
         
-        Log.d("MqttClient", "Client is connected, proceeding with publish")
-        
         return try {
-            Log.d("MqttClient", "Encoding message...")
             val encoded = MqttCodec.encodeMessage(contentType, filename, Config.deviceId, data)
-            Log.d("MqttClient", "Message encoded successfully, size: ${encoded.size}")
             
             val message = MqttMessage(encoded).apply {
                 qos = 1
                 isRetained = false
             }
-            Log.d("MqttClient", "MqttMessage created with QoS 1")
-            
-            Log.d("MqttClient", "Publishing message to topic: $topic")
+
+            val topic = "users/$clientId/notes"
             mqttClient.publish(topic, message)
-            Log.d("MqttClient", "Published $filename ($contentType)")
             true
         } catch (e: Exception) {
             Log.e("MqttClient", "Failed to publish: ${e.message}", e)
