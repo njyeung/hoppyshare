@@ -42,10 +42,10 @@ export default function Mobile() {
         platform: os
       });
       
+      console.log(response.status)
       const data = await response.json()
       
-      if (data.success) {
-        // Redirect to Android app with certificate data
+      if (response.status == 200) {
         const params = new URLSearchParams({
           cert: data.cert,
           key: data.key,
@@ -54,6 +54,7 @@ export default function Mobile() {
           device_id: data.device_id
         })
         
+        console.log(params)
         window.location.href = `hoppyshare://setup?${params.toString()}`
       } else {
         setError(data.error || 'Failed to get device certificates')
@@ -69,7 +70,7 @@ export default function Mobile() {
     detectOS()
     if (!loading && !user) {
       sessionStorage.setItem('mobileSetup', 'true');
-      router.push("/auth")
+      signInWithGoogle()
     }
     else if (!loading && user) {
       // User is authenticated, fetch certificates
