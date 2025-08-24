@@ -15,4 +15,13 @@
     <color name="secondary_muted">#8b7472</color>
     
     <color name="brand_white">#f9f1f0</color>
+    
+    <!-- Status Colors -->
+    <color name="success_green">#4CAF50</color>
+    <color name="error_red">#F44336</color>
+    <color name="background_light">#FAFAFA</color>
+    
+    <!-- Button Colors -->
+    <color name="button_primary_background">#f0b77e</color>
+    <color name="button_primary_text">#603d3e</color>
 </resources>

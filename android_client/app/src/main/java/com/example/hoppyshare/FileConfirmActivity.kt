@@ -8,19 +8,26 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
 class FileConfirmActivity : AppCompatActivity() {
     
     private lateinit var sharePreview: ImageView
     private lateinit var shareFileName: TextView
     private lateinit var shareFileSize: TextView
+    private lateinit var mqttClient: MqttClient
+    private var currentFileUri: Uri? = null
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_share_receive)
         
+        mqttClient = MqttClient(this)
         setupUI()
         handleFileUri()
+        connectToMqtt()
     }
     
     private fun setupUI() {
@@ -40,9 +47,7 @@ class FileConfirmActivity : AppCompatActivity() {
         }
         
         sendButton.setOnClickListener {
-            Toast.makeText(this, "Would send via HoppyShare MQTT", Toast.LENGTH_SHORT).show()
-            // TODO: Implement actual file sending via MQTT
-            finish()
+            sendFileViaMqtt()
         }
     }
     
@@ -50,6 +55,7 @@ class FileConfirmActivity : AppCompatActivity() {
         val uriString = intent.getStringExtra("file_uri")
         if (uriString != null) {
             val uri = Uri.parse(uriString)
+            currentFileUri = uri
             val fileName = getFileName(uri)
             val fileSize = getFileSize(uri)
             
@@ -57,6 +63,94 @@ class FileConfirmActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, "No file selected", Toast.LENGTH_SHORT).show()
             finish()
+        }
+    }
+    
+    private fun connectToMqtt() {
+        lifecycleScope.launch {
+            mqttClient.connect()
+        }
+    }
+    
+    private fun sendFileViaMqtt() {
+        val uri = currentFileUri ?: return
+        val fileName = getFileName(uri)
+        val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
+        
+        android.util.Log.d("FileConfirm", "Starting file send:")
+        android.util.Log.d("FileConfirm", "  fileName: $fileName")
+        android.util.Log.d("FileConfirm", "  mimeType: $mimeType")
+        
+        lifecycleScope.launch {
+            try {
+                // Load config first
+                if (!Config.loadFromPreferences(this@FileConfirmActivity)) {
+                    Toast.makeText(this@FileConfirmActivity, "Config not loaded", Toast.LENGTH_LONG).show()
+                    android.util.Log.e("FileConfirm", "Config not loaded")
+                    return@launch
+                }
+                
+                android.util.Log.d("FileConfirm", "Config loaded, deviceId: ${Config.deviceId}")
+                
+                if (!mqttClient.isConnected()) {
+                    Toast.makeText(this@FileConfirmActivity, "Connecting to MQTT...", Toast.LENGTH_SHORT).show()
+                    android.util.Log.d("FileConfirm", "Connecting to MQTT...")
+                    val clientId = mqttClient.connect()
+                    if (clientId == null || !mqttClient.isConnected()) {
+                        Toast.makeText(this@FileConfirmActivity, "Failed to connect to MQTT", Toast.LENGTH_LONG).show()
+                        android.util.Log.e("FileConfirm", "Failed to connect to MQTT")
+                        return@launch
+                    }
+                    android.util.Log.d("FileConfirm", "Connected to MQTT as: $clientId")
+                }
+                
+                // Read file content
+                android.util.Log.d("FileConfirm", "Reading file data...")
+                val fileData = readFileData(uri)
+                if (fileData == null) {
+                    Toast.makeText(this@FileConfirmActivity, "Failed to read file", Toast.LENGTH_LONG).show()
+                    android.util.Log.e("FileConfirm", "Failed to read file data")
+                    return@launch
+                }
+                
+                android.util.Log.d("FileConfirm", "File data read successfully, size: ${fileData.size} bytes")
+                
+                // Publish to MQTT
+                val topic = "users/${Config.deviceId}/notes"
+                android.util.Log.d("FileConfirm", "Publishing to topic: $topic")
+                android.util.Log.d("FileConfirm", "Payload size: ${fileData.size}, mimeType: $mimeType, fileName: $fileName")
+                
+                val success = mqttClient.publish(topic, fileData, mimeType, fileName)
+                
+                android.util.Log.d("FileConfirm", "Publish result: $success")
+                
+                if (success) {
+                    Toast.makeText(this@FileConfirmActivity, "File sent successfully!", Toast.LENGTH_SHORT).show()
+                    finish()
+                } else {
+                    Toast.makeText(this@FileConfirmActivity, "Failed to send file via MQTT", Toast.LENGTH_LONG).show()
+                }
+                
+            } catch (e: Exception) {
+                android.util.Log.e("FileConfirm", "Error sending file: ${e.message}", e)
+                Toast.makeText(this@FileConfirmActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    
+    private suspend fun readFileData(uri: Uri): ByteArray? {
+        return try {
+            contentResolver.openInputStream(uri)?.use { inputStream ->
+                val buffer = ByteArrayOutputStream()
+                val data = ByteArray(1024)
+                var nRead: Int
+                while (inputStream.read(data, 0, data.size).also { nRead = it } != -1) {
+                    buffer.write(data, 0, nRead)
+                }
+                buffer.toByteArray()
+            }
+        } catch (e: Exception) {
+            null
         }
     }
     
