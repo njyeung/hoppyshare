@@ -59,8 +59,8 @@ def route_action(event):
             if not platform:
                 return error_response("platform field required")
 
-            if platform not in { "WINDOWS", "MACOS", "LINUX" }:
-                return error_response("platform must be LINUX, MACOS, or WINDOWS") 
+            if platform not in { "WINDOWS", "MACOS", "LINUX", "ANDROID" }:
+                return error_response("platform must be LINUX, MACOS, ANDROID, or WINDOWS") 
 
             return add_device(uid, platform)
         case ("GET", "/api/devices"):
