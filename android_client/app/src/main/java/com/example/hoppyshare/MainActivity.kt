@@ -151,7 +151,7 @@ class MainActivity : AppCompatActivity() {
     
     private fun redirectToSetup() {
         try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://hoppyshare.vercel.app/add-device/mobile"))
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://hoppyshare.com/add-device/mobile"))
             startActivity(intent)
             finish()
         } catch (e: Exception) {
