@@ -18,6 +18,7 @@ class MainActivity : AppCompatActivity() {
     
     private lateinit var statusText: TextView
     private lateinit var mqttClient: MqttClient
+    private lateinit var viewMessageButton: Button
     
     // Modern file picker using ActivityResultContracts
     private val filePickerLauncher = registerForActivityResult(
@@ -44,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         // Initialize MQTT client
-        mqttClient = MqttClient(this)
+        mqttClient = MqttManager.getInstance(this)
         
         setupUI()
         connectToMqtt()
@@ -52,11 +53,18 @@ class MainActivity : AppCompatActivity() {
     
     private fun setupUI() {
         statusText = findViewById(R.id.statusText)
+        viewMessageButton = findViewById(R.id.viewMessageButton)
         val pickFileButton = findViewById<Button>(R.id.pickFileButton)
         
         pickFileButton.setOnClickListener {
             // Launch file picker for any file type
             filePickerLauncher.launch("*/*")
+        }
+        
+        viewMessageButton.setOnClickListener {
+            lifecycleScope.launch {
+                viewReceivedMessage()
+            }
         }
         
         // Set up message callback
@@ -82,23 +90,51 @@ class MainActivity : AppCompatActivity() {
     private suspend fun handleIncomingMessage() {
         val lastMessage = mqttClient.getLastMessage()
         if (lastMessage != null) {
-            statusText.text = "Received: ${lastMessage.filename} (${lastMessage.contentType})"
             
-            // If it's text content, show it in a toast
-            if (lastMessage.contentType.startsWith("text/")) {
-                val textContent = String(lastMessage.payload)
-                Toast.makeText(this, "Text: $textContent", Toast.LENGTH_LONG).show()
+            // Enable the view message button
+            runOnUiThread {
+                viewMessageButton.isEnabled = true
+                viewMessageButton.backgroundTintList =
+                    getColorStateList(R.color.button_primary_background)
+            }
+        }
+    }
+    
+    private suspend fun viewReceivedMessage() {
+        val lastMessage = mqttClient.getLastMessage()
+        if (lastMessage != null) {
+            // Launch MessageViewActivity
+            val intent = Intent(this, MessageViewActivity::class.java)
+            startActivity(intent)
+        }
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        
+        lifecycleScope.launch {
+            // Check if message was cleared by MessageViewActivity
+            val hasMessage = mqttClient.getLastMessage() != null
+            if (!hasMessage && viewMessageButton.isEnabled) {
+                // Message was viewed/cleared, update UI
+                viewMessageButton.isEnabled = false
+                viewMessageButton.backgroundTintList = getColorStateList(R.color.secondary)
+            }
+            
+            // Check and reconnect MQTT if needed
+            statusText.text = "Reconnecting..."
+            val connected = MqttManager.ensureConnected(this@MainActivity)
+            if (connected) {
+                statusText.text = "Connected"
             } else {
-                Toast.makeText(this, "Received file: ${lastMessage.filename}", Toast.LENGTH_LONG).show()
+                statusText.text = "Failed to reconnect. Restart app"
             }
         }
     }
     
     override fun onDestroy() {
         super.onDestroy()
-        if (::mqttClient.isInitialized) {
-            mqttClient.disconnect()
-        }
+        // Don't disconnect here - let other activities use the same connection
     }
     
     private fun handleSelectedFile(uri: Uri) {
@@ -120,7 +156,7 @@ class MainActivity : AppCompatActivity() {
             finish()
         } catch (e: Exception) {
             // If no browser available, show error
-            statusText?.text = "Please visit http://hoppyshare.vercel.app/add-device/mobile to set up your device"
+            Toast.makeText(this, "Please visit http://hoppyshare.vercel.app/add-device/mobile to set up your device", Toast.LENGTH_SHORT).show()
         }
     }
 }

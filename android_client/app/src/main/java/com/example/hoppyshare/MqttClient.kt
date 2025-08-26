@@ -91,6 +91,8 @@ class MqttClient(private val context: Context) {
             client?.setCallback(object : MqttCallback {
                 override fun connectionLost(cause: Throwable?) {
                     Log.w("MqttClient", "Connection lost: ${cause?.message}")
+                    // The MQTT client should automatically reconnect due to isAutomaticReconnect = true
+                    // But we can add additional handling here if needed
                 }
                 
                 override fun messageArrived(topic: String?, message: MqttMessage?) {

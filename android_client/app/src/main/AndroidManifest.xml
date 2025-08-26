@@ -58,6 +58,11 @@
             </intent-filter>
         </activity>
         
+        <activity
+            android:name=".MessageViewActivity"
+            android:exported="false"
+            android:theme="@style/Theme.HoppyShare" />
+        
         <!-- MQTT Service for Android -->
         <service android:name="org.eclipse.paho.android.service.MqttService" />
     </application>

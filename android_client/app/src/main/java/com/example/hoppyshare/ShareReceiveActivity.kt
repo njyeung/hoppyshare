@@ -8,18 +8,25 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
 class ShareReceiveActivity : AppCompatActivity() {
     
     private lateinit var sharePreview: ImageView
     private lateinit var shareFileName: TextView
     private lateinit var shareFileSize: TextView
+    private lateinit var mqttClient: MqttClient
+    private var currentFileUri: Uri? = null
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_share_receive)
         
+        mqttClient = MqttManager.getInstance(this)
         setupUI()
+        connectToMqtt()
         
         when (intent?.action) {
             Intent.ACTION_SEND -> handleSingleFile()
@@ -44,15 +51,14 @@ class ShareReceiveActivity : AppCompatActivity() {
         }
         
         sendButton.setOnClickListener {
-            Toast.makeText(this, "Would send via HoppyShare MQTT", Toast.LENGTH_SHORT).show()
-            // TODO: Implement actual file sending via MQTT
-            finish()
+            sendFileViaMqtt()
         }
     }
     
     private fun handleSingleFile() {
         val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
         if (uri != null) {
+            currentFileUri = uri
             val fileName = getFileName(uri)
             val fileSize = getFileSize(uri)
             
@@ -60,8 +66,14 @@ class ShareReceiveActivity : AppCompatActivity() {
             showFilePreview(uri, fileName, fileSize)
             
         } else {
-            Toast.makeText(this, "No file received", Toast.LENGTH_SHORT).show()
-            finish()
+            // Handle text sharing
+            val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+            if (text != null) {
+                handleSharedText(text)
+            } else {
+                Toast.makeText(this, "No file received", Toast.LENGTH_SHORT).show()
+                finish()
+            }
         }
     }
     
@@ -140,5 +152,95 @@ class ShareReceiveActivity : AppCompatActivity() {
             bytes >= 1024 -> "${bytes / 1024}KB" 
             else -> "${bytes}B"
         }
+    }
+    
+    private fun connectToMqtt() {
+        lifecycleScope.launch {
+            MqttManager.ensureConnected(this@ShareReceiveActivity)
+        }
+    }
+    
+    private fun handleSharedText(text: String) {
+        shareFileName.text = "Shared Text"
+        shareFileSize.text = "${text.length} characters"
+        sharePreview.setBackgroundColor(android.graphics.Color.LTGRAY)
+        sharePreview.setImageDrawable(null)
+        
+        // Store text as "file" data for sending
+        currentFileUri = null // No URI for text
+    }
+    
+    private fun sendFileViaMqtt() {
+        lifecycleScope.launch {
+            try {
+                if (!MqttManager.ensureConnected(this@ShareReceiveActivity)) {
+                    Toast.makeText(this@ShareReceiveActivity, "Failed to connect to MQTT", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+                
+                // Handle text sharing
+                val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+                if (sharedText != null && currentFileUri == null) {
+                    val success = mqttClient.publish(
+                        sharedText.toByteArray(),
+                        "text/plain",
+                        "clipboard.txt"
+                    )
+                    
+                    if (success) {
+                        Toast.makeText(this@ShareReceiveActivity, "Text shared successfully!", Toast.LENGTH_SHORT).show()
+                        finish()
+                    } else {
+                        Toast.makeText(this@ShareReceiveActivity, "Failed to share text", Toast.LENGTH_LONG).show()
+                    }
+                    return@launch
+                }
+                
+                // Handle file sharing
+                val uri = currentFileUri ?: return@launch
+                val fileName = getFileName(uri)
+                val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
+                
+                // Read file content
+                val fileData = readFileData(uri)
+                if (fileData == null) {
+                    Toast.makeText(this@ShareReceiveActivity, "Failed to read file", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+                
+                val success = mqttClient.publish(fileData, mimeType, fileName)
+                
+                if (success) {
+                    Toast.makeText(this@ShareReceiveActivity, "File shared successfully!", Toast.LENGTH_SHORT).show()
+                    finish()
+                } else {
+                    Toast.makeText(this@ShareReceiveActivity, "Failed to share file", Toast.LENGTH_LONG).show()
+                }
+                
+            } catch (e: Exception) {
+                Toast.makeText(this@ShareReceiveActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    
+    private suspend fun readFileData(uri: Uri): ByteArray? {
+        return try {
+            contentResolver.openInputStream(uri)?.use { inputStream ->
+                val buffer = ByteArrayOutputStream()
+                val data = ByteArray(1024)
+                var nRead: Int
+                while (inputStream.read(data, 0, data.size).also { nRead = it } != -1) {
+                    buffer.write(data, 0, nRead)
+                }
+                buffer.toByteArray()
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        // Don't disconnect here - let other activities use the same connection
     }
 }

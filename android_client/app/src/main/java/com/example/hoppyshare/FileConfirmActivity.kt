@@ -24,7 +24,7 @@ class FileConfirmActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_share_receive)
         
-        mqttClient = MqttClient(this)
+        mqttClient = MqttManager.getInstance(this)
         setupUI()
         handleFileUri()
         connectToMqtt()
@@ -68,7 +68,7 @@ class FileConfirmActivity : AppCompatActivity() {
     
     private fun connectToMqtt() {
         lifecycleScope.launch {
-            mqttClient.connect()
+            MqttManager.ensureConnected(this@FileConfirmActivity)
         }
     }
     
@@ -92,16 +92,10 @@ class FileConfirmActivity : AppCompatActivity() {
                 
                 android.util.Log.d("FileConfirm", "Config loaded, deviceId: ${Config.deviceId}")
                 
-                if (!mqttClient.isConnected()) {
-                    Toast.makeText(this@FileConfirmActivity, "Connecting to MQTT...", Toast.LENGTH_SHORT).show()
-                    android.util.Log.d("FileConfirm", "Connecting to MQTT...")
-                    val clientId = mqttClient.connect()
-                    if (clientId == null || !mqttClient.isConnected()) {
-                        Toast.makeText(this@FileConfirmActivity, "Failed to connect to MQTT", Toast.LENGTH_LONG).show()
-                        android.util.Log.e("FileConfirm", "Failed to connect to MQTT")
-                        return@launch
-                    }
-                    android.util.Log.d("FileConfirm", "Connected to MQTT as: $clientId")
+                if (!MqttManager.ensureConnected(this@FileConfirmActivity)) {
+                    Toast.makeText(this@FileConfirmActivity, "Failed to connect to MQTT", Toast.LENGTH_LONG).show()
+                    android.util.Log.e("FileConfirm", "Failed to connect to MQTT")
+                    return@launch
                 }
                 
                 // Read file content
