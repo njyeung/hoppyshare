@@ -30,6 +30,20 @@ export default function Mobile() {
     }
   }
 
+  useEffect(()=>{
+    detectOS()
+    if (!loading && !user) {
+      router.push("/faq")
+      // sessionStorage.setItem('mobileSetup', 'true');
+      // router.push("/auth")
+    }
+    else if (!loading && user) {
+      // User is authenticated, fetch certificates
+      fetchDeviceCerts()
+    }
+
+  }, [loading, user])
+
   const fetchDeviceCerts = async () => {
     if (!user || isLoading) return
     
@@ -55,6 +69,8 @@ export default function Mobile() {
         
         
         window.location.href = `hoppyshare://setup?${params.toString()}`
+
+        router.push("/dashboard")
       } else {
         setError(data.error || 'Failed to get device certificates')
       }
@@ -64,19 +80,7 @@ export default function Mobile() {
       setIsLoading(false)
     }
   }
-
-  useEffect(()=>{
-    detectOS()
-    if (!loading && !user) {
-      sessionStorage.setItem('mobileSetup', 'true');
-      router.push("/auth")
-    }
-    else if (!loading && user) {
-      // User is authenticated, fetch certificates
-      fetchDeviceCerts()
-    }
-
-  }, [loading, user])
+  
   
   if (loading || isLoading) {
     return (
