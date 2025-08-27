@@ -26,7 +26,7 @@ export default function AuthCallback() {
             sessionStorage.removeItem('mobileSetup');
             router.push('/faq');
           } else {
-            router.push('/dashboard');
+            router.push('/faq');
           }
         } else {
           router.push('/auth')
