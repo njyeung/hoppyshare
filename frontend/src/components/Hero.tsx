@@ -13,7 +13,8 @@ export default function Hero() {
 
     return ()=>{
       if (spinnerRef.current) {
-        spinnerRef.current?.close()
+        clearInterval(spinnerRef.current)
+        spinnerRef.current = null
       }
     }
   }, [])
