@@ -23,9 +23,8 @@ export default function AuthCallback() {
           // Check if this was a mobile setup login
           const isMobileSetup = sessionStorage.getItem('mobileSetup');
           if (isMobileSetup) {
-            alert("IS MOBILE")
             sessionStorage.removeItem('mobileSetup');
-            router.push('/faq');
+            router.push('/add-device/mobile');
           } else {
             router.push('/dashboard');
           }
