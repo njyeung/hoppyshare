@@ -20,6 +20,7 @@ export default function AuthCallback() {
         }
 
         if (data.session) {
+          alert("CHECKING SESSION")
           // Check if this was a mobile setup login
           const isMobileSetup = localStorage.getItem('mobileSetup');
           if (isMobileSetup) {
