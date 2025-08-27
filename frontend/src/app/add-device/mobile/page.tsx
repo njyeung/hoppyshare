@@ -14,24 +14,24 @@ export default function Mobile() {
   const [error, setError] = useState<string | null>(null)
   const {user, loading, signInWithGoogle} = useAuth()
   const router = useRouter()
-  function detectOS() {
-    if (typeof window === 'undefined') return 'MACOS';
+  // function detectOS() {
+  //   if (typeof window === 'undefined') return 'MACOS';
     
-    const userAgent = window.navigator.userAgent;
+  //   const userAgent = window.navigator.userAgent;
     
-    if (/Android/i.test(userAgent)) {
-      setOs("ANDROID")
-    }
-    else if (/iPhone|iPad|iPod/i.test(userAgent)) {
-      setOs("IOS")
-    }
-    else {
-      router.push("/")
-    }
-  }
+  //   if (/Android/i.test(userAgent)) {
+  //     setOs("ANDROID")
+  //   }
+  //   else if (/iPhone|iPad|iPod/i.test(userAgent)) {
+  //     setOs("IOS")
+  //   }
+  //   else {
+  //     router.push("/")
+  //   }
+  // }
 
   useEffect(()=>{
-    detectOS()
+    // detectOS()
     if (!loading && !user) {
       sessionStorage.setItem('mobileSetup', 'true');
       router.push("/auth")
