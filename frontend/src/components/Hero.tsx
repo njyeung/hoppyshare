@@ -36,7 +36,7 @@ export default function Hero() {
       <div className="container px-4 md:px-6 lg:px-12 relative z-10 mt-32 lg:mt-44">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Left Content */}
-          <div className="text-left md:max-w-md lg:max-w-lg xl:max-w-xl">
+          <div className="text-left w-full md:max-w-md lg:max-w-lg xl:max-w-xl">
             
             {/* Main Heading */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-secondary-darker mb-4 sm:mb-6">
@@ -71,7 +71,7 @@ export default function Hero() {
           </div>
           
           {/* Right Visual */}
-          <div className='w-full h-full flex justify-center'>
+          <div className='h-full flex justify-center items-center'>
             <motion.img className='pixel-art aspect-square
             w-full h-full max-w-80 max-h-80
             sm:max-w-none sm:max-h-none sm:h-72 sm:w-72
