@@ -71,7 +71,7 @@ export default function Hero() {
           </div>
           
           {/* Right Visual */}
-          <div className='w-full h-full flex justify-center'>
+          <div className='h-full flex justify-center items-center'>
             <motion.img className='pixel-art aspect-square
             w-full h-full max-w-80 max-h-80
             sm:max-w-none sm:max-h-none sm:h-72 sm:w-72
