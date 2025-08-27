@@ -155,7 +155,7 @@ class MainActivity : AppCompatActivity() {
             finish()
         } catch (e: Exception) {
             // If no browser available, show error
-            Toast.makeText(this, "Please visit http://hoppyshare.vercel.app/add-device/mobile to set up your device", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Please visit http://hoppyshare.com/add-device/mobile to set up your device", Toast.LENGTH_SHORT).show()
         }
     }
 }

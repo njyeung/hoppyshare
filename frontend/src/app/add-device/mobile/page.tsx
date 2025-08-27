@@ -3,7 +3,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { apiPost } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { userAgent } from "next/server";
 import { useState, useEffect } from "react";
 
 type os = "ANDROID" | "IOS"
@@ -70,7 +69,7 @@ export default function Mobile() {
     detectOS()
     if (!loading && !user) {
       sessionStorage.setItem('mobileSetup', 'true');
-      signInWithGoogle()
+      router.push("/auth")
     }
     else if (!loading && user) {
       // User is authenticated, fetch certificates
