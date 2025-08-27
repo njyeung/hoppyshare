@@ -33,7 +33,7 @@ export default function Mobile() {
   useEffect(()=>{
     // detectOS()
     if (!loading && !user) {
-      sessionStorage.setItem('mobileSetup', 'true');
+      localStorage.setItem('mobileSetup', 'true');
       router.push("/auth")
     }
     else if (!loading && user) {
