@@ -15,7 +15,7 @@ This document defines the standardized device settings schema used across all co
     "nickname": "My Device",
     "enabled": true,
     "auto_copy": false,
-    "auto_paste": false,
+    "light_animations": false,
     "cache_time": 30,
     "muted": false,
     "send_to_self": true,
@@ -33,7 +33,7 @@ This document defines the standardized device settings schema used across all co
 | `nickname` | `string` | `"Unnamed Device"` | Human-readable device name displayed in UI |
 | `enabled` | `boolean` | `true` | Master switch - when false, device ignores all messages |
 | `auto_copy` | `boolean` | `false` | Automatically copy received messages to clipboard |
-| `auto_paste` | `boolean` | `false` | Automatically paste after auto_copy (requires auto_copy: true) |
+| `LightAniations` | `boolean` | `false` | Automatically paste after auto_copy (requires auto_copy: true) |
 | `cache_time` | `number` | `30` | Time in seconds messages remain accessible (max 300s) |
 | `muted` | `boolean` | `false` | Disable all notification sounds |
 | `send_to_self` | `boolean` | `true` | Allow receiving messages from the same device |
@@ -52,7 +52,7 @@ All three components should use these exact default values:
     "nickname": "Unnamed Device",
     "enabled": True,
     "auto_copy": False,
-    "auto_paste": False,
+    "light_animations": False,
     "cache_time": 30,
     "muted": False,
     "send_to_self": True,
@@ -68,7 +68,7 @@ interface DeviceSettings {
   nickname: string;      // "Unnamed Device"
   enabled: boolean;      // true
   auto_copy: boolean;    // false
-  auto_paste: boolean;   // false
+  light_animations: boolean;   // false
   cache_time: number;    // 30
   muted: boolean;        // false
   send_to_self: boolean; // true
@@ -83,20 +83,19 @@ The Go client uses PascalCase while JSON uses snake_case:
 ```go
 type Settings struct {
     Nickname   string // "Unnamed Device"
-    Enabled    bool   // true
-    AutoCopy   bool   // false (maps to auto_copy)
-    AutoPaste  bool   // false (maps to auto_paste) 
-    CacheTime  int    // 30 (maps to cache_time)
-    Muted      bool   // false
-    SendToSelf bool   // true (maps to send_to_self)
-    AutoBLE    bool   // true (maps to auto_ble)
-    Startup    bool   // true
-    Destroy    bool   // false
+    Enabled           bool   // true
+    AutoCopy          bool   // false (maps to auto_copy)
+    LightAniations    bool   // false (maps to auto_paste) 
+    CacheTime         int    // 30 (maps to cache_time)
+    Muted             bool   // false
+    SendToSelf        bool   // true (maps to send_to_self)
+    AutoBLE           bool   // true (maps to auto_ble)
+    Startup           bool   // true
+    Destroy           bool   // false
 }
 ```
 
 ### Validation Rules
 - `cache_time`: Must be between 1 and 300 seconds
 - `nickname`: fallback to "Unnamed Device"
-- `auto_paste`: Only functions when `auto_copy` is true
 
