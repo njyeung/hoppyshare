@@ -10,47 +10,47 @@ import (
 )
 
 type Settings struct {
-	Nickname   string // device nickname
-	Enabled    bool   // ignore messages on this device
-	AutoCopy   bool   // auto copies to clipboard
-	AutoPaste  bool   // auto pastes, only active when auto_copy is true
-	CacheTime  int    // time in seconds that messages are cached MAX 5 mins (BLE bucket size)
-	Muted      bool   // a notification sound plays
-	SendToSelf bool   // mqtt subscribes to itself
-	AutoBLE    bool   // Bluetooth Low Energy automatically turns on when network loss is detected
-	Startup    bool   // auto startup
-	Destroy    bool   // quits and removes itself when true
+	Nickname        string // device nickname
+	Enabled         bool   // ignore messages on this device
+	AutoCopy        bool   // auto copies to clipboard
+	LightAnimations bool   // look in animate for specific icon behavior
+	CacheTime       int    // time in seconds that messages are cached MAX 5 mins (BLE bucket size)
+	Muted           bool   // a notification sound plays
+	SendToSelf      bool   // mqtt subscribes to itself
+	AutoBLE         bool   // Bluetooth Low Energy automatically turns on when network loss is detected
+	Startup         bool   // auto startup
+	Destroy         bool   // quits and removes itself when true
 }
 
 var (
 	settingsMu sync.RWMutex
 	settings   = Settings{
-		Nickname:   "Unnamed Device",
-		Enabled:    true,
-		AutoCopy:   false,
-		AutoPaste:  false, // TODO
-		CacheTime:  30,
-		Muted:      false,
-		SendToSelf: true,
-		AutoBLE:    true,
-		Startup:    true,
-		Destroy:    false,
+		Nickname:        "Unnamed Device",
+		Enabled:         true,
+		AutoCopy:        false,
+		LightAnimations: false,
+		CacheTime:       30,
+		Muted:           false,
+		SendToSelf:      true,
+		AutoBLE:         true,
+		Startup:         true,
+		Destroy:         false,
 	}
 )
 
 type DeviceSettings struct {
 	DeviceID string `json:"deviceid"`
 	Settings struct {
-		Nickname   *string `json:"nickname,omitempty"`
-		Enabled    *bool   `json:"enabled,omitempty"`
-		AutoCopy   *bool   `json:"auto_copy,omitempty"`
-		AutoPaste  *bool   `json:"auto_paste,omitempty"`
-		CacheTime  *int    `json:"cache_time,omitempty"`
-		Muted      *bool   `json:"muted,omitempty"`
-		SendToSelf *bool   `json:"send_to_self,omitempty"`
-		AutoBLE    *bool   `json:"auto_ble,omitempty"`
-		Startup    *bool   `json:"startup,omitempty"`
-		Destroy    *bool   `json:"destroy,omitempty"`
+		Nickname        *string `json:"nickname,omitempty"`
+		Enabled         *bool   `json:"enabled,omitempty"`
+		AutoCopy        *bool   `json:"auto_copy,omitempty"`
+		LightAnimations *bool   `json:"light_animations,omitempty"`
+		CacheTime       *int    `json:"cache_time,omitempty"`
+		Muted           *bool   `json:"muted,omitempty"`
+		SendToSelf      *bool   `json:"send_to_self,omitempty"`
+		AutoBLE         *bool   `json:"auto_ble,omitempty"`
+		Startup         *bool   `json:"startup,omitempty"`
+		Destroy         *bool   `json:"destroy,omitempty"`
 	} `json:"settings"`
 }
 
@@ -83,8 +83,8 @@ func ParseSettings(data []byte) error {
 			if s.AutoCopy != nil {
 				settings.AutoCopy = *s.AutoCopy
 			}
-			if s.AutoPaste != nil {
-				settings.AutoPaste = *s.AutoPaste
+			if s.LightAnimations != nil {
+				settings.LightAnimations = *s.LightAnimations
 			}
 			if s.CacheTime != nil {
 				settings.CacheTime = *s.CacheTime

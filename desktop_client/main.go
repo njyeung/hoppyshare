@@ -1,6 +1,7 @@
 package main
 
 import (
+	"desktop_client/animate"
 	"desktop_client/ble"
 	"desktop_client/clipboard"
 	"desktop_client/config"
@@ -18,7 +19,6 @@ import (
 	"mime"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sync"
 	"time"
 
@@ -29,47 +29,8 @@ import (
 var clientID string
 var err error
 
-//go:embed assets/macOS/default.png
-var defaultIconMacOS []byte
-
-//go:embed assets/macOS/notification.png
-var notificationIconMacOS []byte
-
-//go:embed assets/macOS/loading1.png
-var loading1IconMacOS []byte
-
-//go:embed assets/macOS/loading2.png
-var loading2IconMacOS []byte
-
-//go:embed assets/macOS/loading3.png
-var loading3IconMacOS []byte
-
-//go:embed assets/macOS/loading4.png
-var loading4IconMacOS []byte
-
-//go:embed assets/windows/default.ico
-var defaultIconWindows []byte
-
-//go:embed assets/windows/notification.ico
-var notificationIconWindows []byte
-
-//go:embed assets/windows/loading1.ico
-var loading1IconWindows []byte
-
-//go:embed assets/windows/loading2.ico
-var loading2IconWindows []byte
-
-//go:embed assets/windows/loading3.ico
-var loading3IconWindows []byte
-
-//go:embed assets/windows/loading4.ico
-var loading4IconWindows []byte
-
 //go:embed assets/notification.wav
 var notificationSound []byte
-
-// max 5 minutes since our msg hash rotates every 5 mins
-const MESSAGE_CACHE_DURATION = 120
 
 var (
 	loading   bool
@@ -81,6 +42,10 @@ var (
 	notificationTimer   *time.Timer
 	notificationTimerMu sync.Mutex
 
+	errorActive bool
+	errorTimer  *time.Timer
+	errorMu     sync.Mutex
+
 	mDownloadRecent  *systray.MenuItem
 	mCopyToClipboard *systray.MenuItem
 
@@ -89,15 +54,57 @@ var (
 	bleState  bool = false
 )
 
-var iconUpdateCh = make(chan struct{}, 1)
 var bleOps = make(chan func(), 1)
 
-func requestIconUpdate() {
-	select {
-	case iconUpdateCh <- struct{}{}:
-	default:
+func updateIconState() {
+	errorMu.Lock()
+	hasError := errorActive
+	errorMu.Unlock()
 
+	// Error state takes precedence over all other states
+	if hasError {
+		animate.SetState(animate.StateError)
+		return
 	}
+
+	loadingMu.RLock()
+	isLoading := loading
+	loadingMu.RUnlock()
+
+	messageMu.RLock()
+	hasMessage := messageAvailable
+	messageMu.RUnlock()
+
+	if isLoading {
+		animate.SetState(animate.StateLoading)
+	} else if hasMessage {
+		animate.SetState(animate.StateNotification)
+	} else {
+		animate.SetState(animate.StateIdle)
+	}
+}
+
+func showErrorState() {
+	errorMu.Lock()
+	// Stop any existing error timer
+	if errorTimer != nil {
+		errorTimer.Stop()
+	}
+
+	errorActive = true
+	errorMu.Unlock()
+
+	updateIconState()
+
+	// Set timer to clear error state after 3 seconds
+	errorMu.Lock()
+	errorTimer = time.AfterFunc(3*time.Second, func() {
+		errorMu.Lock()
+		errorActive = false
+		errorMu.Unlock()
+		updateIconState() // Return to normal state
+	})
+	errorMu.Unlock()
 }
 
 func main() {
@@ -120,6 +127,10 @@ func main() {
 			op()
 		}
 	}()
+
+	// Start systray icon thread
+	animate.Initialize()
+	animate.Start()
 
 	connectivity.Start()
 
@@ -149,22 +160,6 @@ func main() {
 }
 
 func onReady() {
-	var (
-		iconDefault  []byte
-		iconNotify   []byte
-		spinnerIcons [][]byte
-	)
-	if runtime.GOOS == "windows" {
-		iconDefault = defaultIconWindows
-		iconNotify = notificationIconWindows
-		spinnerIcons = [][]byte{loading1IconWindows, loading2IconWindows, loading3IconWindows, loading4IconWindows}
-	} else {
-		iconDefault = defaultIconMacOS
-		iconNotify = notificationIconMacOS
-		spinnerIcons = [][]byte{loading1IconMacOS, loading2IconMacOS, loading3IconMacOS, loading4IconMacOS}
-	}
-
-	systrayhelpers.SetIcon(iconDefault)
 	systrayhelpers.SetTitle("")
 	systrayhelpers.SetTooltip("Disconnected")
 	mSendClipboard := systray.AddMenuItem("Send Clipboard", "Send clipboard contents")
@@ -272,50 +267,6 @@ func onReady() {
 		}
 	}()
 
-	// icon logic
-	go func() {
-		spinnerIdx := 0
-		var ticker *time.Ticker
-
-		for {
-			select {
-			case <-iconUpdateCh:
-				loadingMu.RLock()
-				isLoading := loading
-				loadingMu.RUnlock()
-
-				messageMu.RLock()
-				hasMessage := messageAvailable
-				messageMu.RUnlock()
-
-				if isLoading {
-					if ticker == nil {
-						ticker = time.NewTicker(200 * time.Millisecond)
-					}
-				} else {
-					if ticker != nil {
-						ticker.Stop()
-						ticker = nil
-					}
-
-					if hasMessage {
-						systrayhelpers.SetIcon(iconNotify)
-					} else {
-						systrayhelpers.SetIcon(iconDefault)
-					}
-				}
-
-			case <-func() <-chan time.Time {
-				if ticker != nil {
-					return ticker.C
-				}
-				return make(chan time.Time)
-			}():
-				systrayhelpers.SetIcon(spinnerIcons[spinnerIdx%len(spinnerIcons)])
-				spinnerIdx++
-			}
-		}
-	}()
 }
 
 type MessageFrom int
@@ -355,7 +306,7 @@ func HandleNewNotification(source MessageFrom) {
 		messageMu.Lock()
 		messageAvailable = false
 		messageMu.Unlock()
-		requestIconUpdate()
+		updateIconState()
 	})
 	notificationTimerMu.Unlock()
 
@@ -363,10 +314,6 @@ func HandleNewNotification(source MessageFrom) {
 
 	if settings.GetSettings().AutoCopy {
 		CopyRecentToClipboard()
-
-		if settings.GetSettings().AutoPaste {
-			// TODO
-		}
 	}
 }
 
@@ -395,9 +342,22 @@ func PublishClipboard() {
 	loadingMu.Lock()
 	loading = true
 	loadingMu.Unlock()
-	requestIconUpdate()
+	updateIconState()
 
 	content, mimeType, err := clipboard.Read()
+
+	if len([]byte(content)) > 80*1024*1024 {
+		notifyErr := notification.Notification("Clipboard too large (>80MB). Operation cancelled.")
+		if notifyErr != nil {
+			log.Println("Notification error:", notifyErr)
+		}
+
+		loadingMu.Lock()
+		loading = false
+		loadingMu.Unlock()
+		showErrorState()
+		return
+	}
 
 	if err != nil {
 		notification.Notification("Could not read clipboard contents: " + err.Error())
@@ -405,7 +365,7 @@ func PublishClipboard() {
 		loadingMu.Lock()
 		loading = false
 		loadingMu.Unlock()
-		requestIconUpdate()
+		updateIconState()
 		return
 	}
 
@@ -415,6 +375,19 @@ func PublishClipboard() {
 	filename := fmt.Sprintf("clipboard%s", ext)
 
 	if bleState {
+		if len([]byte(content)) > 3*1024*1024 {
+			notifyErr := notification.Notification("Clipboard too large (>3MB). Operation cancelled.")
+			if notifyErr != nil {
+				log.Println("Notification error:", notifyErr)
+			}
+
+			loadingMu.Lock()
+			loading = false
+			loadingMu.Unlock()
+			showErrorState()
+			return
+		}
+
 		ble.Publish([]byte(content), mimeType, filename)
 	} else {
 		err = mqttclient.Publish(topic, []byte(content), mimeType, filename)
@@ -426,14 +399,14 @@ func PublishClipboard() {
 	loadingMu.Lock()
 	loading = false
 	loadingMu.Unlock()
-	requestIconUpdate()
+	updateIconState()
 }
 
 func PublishFile() {
 	loadingMu.Lock()
 	loading = true
 	loadingMu.Unlock()
-	requestIconUpdate()
+	updateIconState()
 
 	filePath, err := dialog.File().Title("Select a File").Load()
 	if err != nil {
@@ -441,7 +414,7 @@ func PublishFile() {
 		loadingMu.Lock()
 		loading = false
 		loadingMu.Unlock()
-		requestIconUpdate()
+		updateIconState()
 		return
 	}
 
@@ -456,7 +429,7 @@ func PublishFile() {
 		loadingMu.Lock()
 		loading = false
 		loadingMu.Unlock()
-		requestIconUpdate()
+		updateIconState()
 		return
 	}
 
@@ -464,14 +437,13 @@ func PublishFile() {
 	if len(fileBytes) > 80*1024*1024 {
 		notifyErr := notification.Notification("File is too large (>80MB). Operation cancelled.")
 		if notifyErr != nil {
-			log.Printf("File size check failed")
 			log.Println("Notification error:", notifyErr)
 		}
 
 		loadingMu.Lock()
 		loading = false
 		loadingMu.Unlock()
-		requestIconUpdate()
+		showErrorState()
 		return
 	}
 
@@ -488,6 +460,19 @@ func PublishFile() {
 	topic := fmt.Sprintf("users/%s/notes", clientID)
 
 	if bleState {
+		if len(fileBytes) > 3*1024*1024 {
+			notifyErr := notification.Notification("File too large for BLE (>3MB). Operation cancelled")
+			if notifyErr != nil {
+				log.Println("Notification error:", notifyErr)
+			}
+
+			loadingMu.Lock()
+			loading = false
+			loadingMu.Unlock()
+			showErrorState()
+			return
+		}
+
 		err := ble.Publish(fileBytes, mimeType, fileName)
 		if err != nil {
 			log.Println(err)
@@ -495,14 +480,18 @@ func PublishFile() {
 	} else {
 		err = mqttclient.Publish(topic, fileBytes, mimeType, fileName)
 		if err != nil {
-			log.Println(err)
+			loadingMu.Lock()
+			loading = false
+			loadingMu.Unlock()
+			showErrorState()
+			return
 		}
 	}
 
 	loadingMu.Lock()
 	loading = false
 	loadingMu.Unlock()
-	requestIconUpdate()
+	updateIconState()
 }
 
 func DownloadRecent() {

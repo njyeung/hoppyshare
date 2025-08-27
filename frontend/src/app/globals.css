@@ -17,3 +17,9 @@ body {
   
   --color-white: #f9f1f0;
 }
+
+.pixel-art {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}

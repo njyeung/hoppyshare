@@ -71,7 +71,7 @@ def add_device(uid, platform):
             "nickname": "Unnamed Device",
             "enabled": True,
             "auto_copy": False,
-            "auto_paste": False,
+            "light_animations": False,
             "cache_time": 30,
             "muted": False,
             "send_to_self": True,

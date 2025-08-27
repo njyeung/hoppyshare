@@ -152,9 +152,9 @@ export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequ
             />
 
             <Switch
-              checked={settings.auto_paste}
-              onChange={(checked) => handleSettingChange('auto_paste', checked)}
-              label="Auto Paste"
+              checked={settings.light_animations}
+              onChange={(checked) => handleSettingChange('light_animations', checked)}
+              label="Light Animations"
               description="Automatically paste clipboard (only when Auto Copy is on)"
             />
 

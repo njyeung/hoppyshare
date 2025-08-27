@@ -2,7 +2,7 @@ export interface DeviceSettings {
   nickname: string;
   enabled: boolean;
   auto_copy: boolean;
-  auto_paste: boolean;
+  light_animations: boolean;
   cache_time: number;
   muted: boolean;
   send_to_self: boolean;

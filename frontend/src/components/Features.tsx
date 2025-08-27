@@ -53,7 +53,7 @@ export default function Features() {
   ];
 
   return (
-    <section id="features" className="relative py-20" ref={containerRef}>
+    <section id="features" className="relative mt-10 md:mt-20 mb-20" ref={containerRef}>
       {/* Subtle grid background */}
       <div
         className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]"
