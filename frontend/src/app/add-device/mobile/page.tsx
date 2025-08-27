@@ -33,9 +33,8 @@ export default function Mobile() {
   useEffect(()=>{
     detectOS()
     if (!loading && !user) {
-      router.push("/faq")
-      // sessionStorage.setItem('mobileSetup', 'true');
-      // router.push("/auth")
+      sessionStorage.setItem('mobileSetup', 'true');
+      router.push("/auth")
     }
     else if (!loading && user) {
       // User is authenticated, fetch certificates
