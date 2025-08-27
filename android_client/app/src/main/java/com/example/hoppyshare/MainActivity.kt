@@ -82,7 +82,7 @@ class MainActivity : AppCompatActivity() {
             if (clientId != null) {
                 statusText.text = "Connected"
             } else {
-                statusText.text = "Failed to connect"
+                statusText.text = "Failed to connect. Restart app"
             }
         }
     }
@@ -134,7 +134,6 @@ class MainActivity : AppCompatActivity() {
     
     override fun onDestroy() {
         super.onDestroy()
-        // Don't disconnect here - let other activities use the same connection
     }
     
     private fun handleSelectedFile(uri: Uri) {

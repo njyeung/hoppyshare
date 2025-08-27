@@ -54,13 +54,8 @@ export default function Mobile() {
           device_id: data.device_id
         })
         
-        console.log(params)
-        window.location.href = `hoppyshare://setup?${params.toString()}`
         
-        // Close the tab after a short delay
-        setTimeout(() => {
-          window.close()
-        }, 2000)
+        window.location.href = `hoppyshare://setup?${params.toString()}`
       } else {
         setError(data.error || 'Failed to get device certificates')
       }
