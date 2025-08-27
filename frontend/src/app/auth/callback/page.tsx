@@ -20,12 +20,10 @@ export default function AuthCallback() {
         }
 
         if (data.session) {
-          alert("CHECKING SESSION")
           // Check if this was a mobile setup login
-          const isMobileSetup = localStorage.getItem('mobileSetup');
+          const isMobileSetup = sessionStorage.getItem('mobileSetup');
           if (isMobileSetup) {
-            alert("MOBILE SETUP")
-            localStorage.removeItem('mobileSetup');
+            sessionStorage.removeItem('mobileSetup');
             router.push('/add-device/mobile');
           } else {
             router.push('/dashboard');
