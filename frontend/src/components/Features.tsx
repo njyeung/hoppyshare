@@ -39,7 +39,7 @@ export default function Features() {
     {
       title: "Large File Support",
       blurb:
-        "Send files up to 80MB — perfect for screen recordings, logs, decks, and artifacts.",
+        "Send files up to 25MB — perfect for images, screen recordings, logs, decks, and artifacts.",
       icon: FileUp,
       kicker: "Optimized chunking, minimal wait",
     },

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xcrun swiftc:*)",
+      "Bash(make:*)",
+      "Bash(rm:*)",
+      "Bash(go build:*)",
+      "Bash(chmod:*)",
+      "Bash(./build_with_swift.sh)",
+      "Bash(xcode-select:*)",
+      "Bash(DEV_MODE=1 go run main.go)"
+    ],
+    "deny": []
+  }
+}
