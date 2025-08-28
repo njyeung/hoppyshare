@@ -1,9 +1,16 @@
 package com.example.hoppyshare
 
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -18,7 +25,18 @@ class MainActivity : AppCompatActivity() {
     
     private lateinit var statusText: TextView
     private lateinit var mqttClient: MqttClient
-    private lateinit var viewMessageButton: Button
+    private lateinit var mascotIcon: ImageView
+    private var animationHandler: Handler? = null
+    private var animationRunnable: Runnable? = null
+    private var currentAnimationFrame = 0
+    private var isShowingNotification = false
+    
+    private val loadingIcons = arrayOf(
+        R.drawable.loading_1,
+        R.drawable.loading_2,
+        R.drawable.loading_3,
+        R.drawable.loading_4
+    )
     
     // Modern file picker using ActivityResultContracts
     private val filePickerLauncher = registerForActivityResult(
@@ -53,19 +71,32 @@ class MainActivity : AppCompatActivity() {
     
     private fun setupUI() {
         statusText = findViewById(R.id.statusText)
-        viewMessageButton = findViewById(R.id.viewMessageButton)
+        mascotIcon = findViewById(R.id.mascotIcon)
         val pickFileButton = findViewById<Button>(R.id.pickFileButton)
+        val sendClipboardButton = findViewById<Button>(R.id.sendClipboardButton)
         
         pickFileButton.setOnClickListener {
             // Launch file picker for any file type
             filePickerLauncher.launch("*/*")
         }
         
-        viewMessageButton.setOnClickListener {
-            lifecycleScope.launch {
-                viewReceivedMessage()
+        sendClipboardButton.setOnClickListener {
+            sendClipboardContent()
+        }
+        
+        mascotIcon.setOnClickListener {
+            if (isShowingNotification) {
+                lifecycleScope.launch {
+                    viewReceivedMessage()
+                }
             }
         }
+        
+        // Disable anti-aliasing for pixel art
+        mascotIcon.drawable?.isFilterBitmap = false
+        
+        // Start loading animation
+        startLoadingAnimation()
         
         // Set up message callback
         mqttClient.setOnMessageCallback {
@@ -90,12 +121,9 @@ class MainActivity : AppCompatActivity() {
     private suspend fun handleIncomingMessage() {
         val lastMessage = mqttClient.getLastMessage()
         if (lastMessage != null) {
-            
-            // Enable the view message button
+            // Switch to notification icon
             runOnUiThread {
-                viewMessageButton.isEnabled = true
-                viewMessageButton.backgroundTintList =
-                    getColorStateList(R.color.button_primary_background)
+                showNotificationIcon()
             }
         }
     }
@@ -115,10 +143,16 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             // Check if message was cleared by MessageViewActivity
             val hasMessage = mqttClient.getLastMessage() != null
-            if (!hasMessage && viewMessageButton.isEnabled) {
-                // Message was viewed/cleared, update UI
-                viewMessageButton.isEnabled = false
-                viewMessageButton.backgroundTintList = getColorStateList(R.color.secondary)
+            if (!hasMessage && isShowingNotification) {
+                // Message was viewed/cleared, resume loading animation
+                runOnUiThread {
+                    resumeLoadingAnimation()
+                }
+            } else if (hasMessage && !isShowingNotification) {
+                // Message arrived while we were away, show notification
+                runOnUiThread {
+                    showNotificationIcon()
+                }
             }
             
             // Check and reconnect MQTT if needed
@@ -134,6 +168,41 @@ class MainActivity : AppCompatActivity() {
     
     override fun onDestroy() {
         super.onDestroy()
+        stopLoadingAnimation()
+    }
+    
+    private fun startLoadingAnimation() {
+        animationHandler = Handler(Looper.getMainLooper())
+        animationRunnable = object : Runnable {
+            override fun run() {
+                if (!isShowingNotification) {
+                    mascotIcon.setImageResource(loadingIcons[currentAnimationFrame])
+                    mascotIcon.drawable?.isFilterBitmap = false // Disable anti-aliasing
+                    currentAnimationFrame = (currentAnimationFrame + 1) % loadingIcons.size
+                    animationHandler?.postDelayed(this, 200)
+                }
+            }
+        }
+        animationHandler?.post(animationRunnable!!)
+    }
+    
+    private fun stopLoadingAnimation() {
+        animationHandler?.removeCallbacks(animationRunnable!!)
+        animationHandler = null
+        animationRunnable = null
+    }
+    
+    private fun showNotificationIcon() {
+        isShowingNotification = true
+        mascotIcon.setImageResource(R.drawable.notification_icon)
+        mascotIcon.drawable?.isFilterBitmap = false // Disable anti-aliasing
+        animateBackgroundColor(getColor(R.color.brand_white), getColor(R.color.primary_light))
+    }
+    
+    private fun resumeLoadingAnimation() {
+        isShowingNotification = false
+        startLoadingAnimation()
+        animateBackgroundColor(getColor(R.color.primary_light), getColor(R.color.brand_white))
     }
     
     private fun handleSelectedFile(uri: Uri) {
@@ -157,5 +226,44 @@ class MainActivity : AppCompatActivity() {
             // If no browser available, show error
             Toast.makeText(this, "Please visit http://hoppyshare.com/add-device/mobile to set up your device", Toast.LENGTH_SHORT).show()
         }
+    }
+    
+    private fun sendClipboardContent() {
+        val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipData = clipboardManager.primaryClip
+        
+        if (clipData != null && clipData.itemCount > 0) {
+            val clipText = clipData.getItemAt(0).text
+            if (clipText != null && clipText.isNotEmpty()) {
+                // Send clipboard text via MQTT
+                lifecycleScope.launch {
+                    try {
+                        val textBytes = clipText.toString().toByteArray(Charsets.UTF_8)
+                        val success = mqttClient.publish(textBytes, "text/plain", "clipboard.txt")
+                        if (success) {
+                            Toast.makeText(this@MainActivity, "Clipboard content sent!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this@MainActivity, "Failed to send clipboard", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(this@MainActivity, "Failed to send clipboard: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } else {
+                Toast.makeText(this, "Clipboard is empty or contains no text", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    private fun animateBackgroundColor(fromColor: Int, toColor: Int) {
+        val mainLayout = findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.main)
+        val colorAnimator = ValueAnimator.ofObject(ArgbEvaluator(), fromColor, toColor)
+        colorAnimator.duration = 200
+        colorAnimator.addUpdateListener { animator ->
+            mainLayout.setBackgroundColor(animator.animatedValue as Int)
+        }
+        colorAnimator.start()
     }
 }
