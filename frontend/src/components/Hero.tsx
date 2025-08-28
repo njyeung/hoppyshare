@@ -34,7 +34,7 @@ export default function Hero() {
     <section className="relative bg-white flex justify-center overflow-hidden">
       
       <div className="container px-4 md:px-6 lg:px-12 relative z-10 mt-32 lg:mt-44">
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col md:flex-row gap-6 justify-center">
           {/* Left Content */}
           <div className="text-left w-full md:max-w-md lg:max-w-lg xl:max-w-xl">
             

@@ -2,7 +2,7 @@ import Footer from "@/components/Footer";
 import LandingNavbar from "@/components/LandingNavbar";
 
 export default function FAQ() {
-  return <section className="w-full bg-white">
+  return <section className="min-h-screen min-w-screen bg-white">
     <LandingNavbar />
     <section className="w-full flex justify-center min-h-screen">
       <div className="mt-12 py-20 max-w-4xl w-full text-secondary-darker px-6">
@@ -29,9 +29,9 @@ export default function FAQ() {
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-secondary-darker">2. Delete application files manually</h3>
                 <ul className="space-y-2 ml-3">
-                  <li><strong>Windows:</strong> Remove <code className="bg-gray-100 px-2 py-1 rounded">%LOCALAPPDATA%\HoppyShare\HoppyShare.exe</code>.</li>
-                  <li><strong>macOS:</strong> Delete <code className="bg-gray-100 px-2 py-1 rounded">~/Library/Application Support/HoppyShare/HoppyShare</code>.</li>
-                  <li><strong>Linux:</strong> Remove <code className="bg-gray-100 px-2 py-1 rounded">~/.local/bin/hoppyshare</code>.</li>
+                  <li><strong>Windows:</strong> Remove <code className="bg-gray-100 px-2 py-1 rounded break-all">%LOCALAPPDATA%\HoppyShare\HoppyShare.exe</code>.</li>
+                  <li><strong>macOS:</strong> Delete <code className="bg-gray-100 px-2 py-1 rounded break-all">~/Library/Application Support/HoppyShare/HoppyShare</code>.</li>
+                  <li><strong>Linux:</strong> Remove <code className="bg-gray-100 px-2 py-1 rounded break-all">~/.local/bin/hoppyshare</code>.</li>
                 </ul>
               </div>
 
