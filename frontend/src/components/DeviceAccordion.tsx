@@ -155,7 +155,7 @@ export default function DeviceAccordion({ device, onSettingsChange, onDeleteRequ
               checked={settings.light_animations}
               onChange={(checked) => handleSettingChange('light_animations', checked)}
               label="Light Animations"
-              description="Automatically paste clipboard (only when Auto Copy is on)"
+              description="Simple icon animations"
             />
 
             <Switch
