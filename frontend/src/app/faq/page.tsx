@@ -7,8 +7,9 @@ export default function FAQ() {
     <section className="w-full flex justify-center min-h-screen">
       <div className="mt-12 py-20 max-w-4xl w-full text-secondary-darker px-6">
         <h1 className="text-4xl w-full mb-8 font-bold">Common Issues</h1>
-        
+
         <div className="space-y-8">
+          {/* Incorrect installation recovery */}
           <div className="pb-6">
             <h2 className="text-2xl font-semibold mb-3">HoppyShare not appearing in systray</h2>
             <p className=" leading-relaxed mb-6">
@@ -51,6 +52,39 @@ export default function FAQ() {
               </div>
             </div>
           </div>
+
+          {/* Mobile Setup Section */}
+          <div className="pb-6" id="mobile">
+            <h2 className="text-2xl font-semibold mb-3">Mobile Setup</h2>
+            
+            <div className="ml-5 space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-secondary-darker">How do I set up HoppyShare on my Android phone?</h3>
+                <ol className="space-y-2 ml-3 list-decimal list-inside">
+                  <li>Download the HoppyShare app from the Google Play Store.</li>
+                  <li>Open the app. On first launch, it will automatically take you to our secure setup page.</li>
+                  <li>Sign in with Google when prompted.</li>
+                  <li>You'll be redirected back into the app, and your phone will be added automatically.</li>
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-secondary-darker">Can I start the mobile setup from the browser?</h3>
+                <p className="leading-relaxed mb-4">
+                  <strong>No.</strong> If you visit <code className="bg-gray-100 px-2 py-1 rounded">hoppyshare.com/add-device/mobile</code> on your phone, a device will be added—but the mobile setup won't complete from the browser. The process only works when it's started inside the Android app.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-secondary-darker">iOS availability</h3>
+                <p className="leading-relaxed">
+                  Not yet—iOS is coming soon. For now, only the Android app is supported for mobile devices.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          
         </div>
       </div>
     </section>
