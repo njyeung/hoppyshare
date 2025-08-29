@@ -181,8 +181,16 @@ class ShareReceiveActivity : AppCompatActivity() {
                 // Handle text sharing
                 val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
                 if (sharedText != null && currentFileUri == null) {
+                    val textBytes = sharedText.toByteArray()
+                    
+                    // Check 25MB size limit for text
+                    if (textBytes.size > 25 * 1024 * 1024) {
+                        Toast.makeText(this@ShareReceiveActivity, "Text too large (>25MB). Operation cancelled.", Toast.LENGTH_LONG).show()
+                        return@launch
+                    }
+                    
                     val success = mqttClient.publish(
-                        sharedText.toByteArray(),
+                        textBytes,
                         "text/plain",
                         "clipboard.txt"
                     )
@@ -205,6 +213,12 @@ class ShareReceiveActivity : AppCompatActivity() {
                 val fileData = readFileData(uri)
                 if (fileData == null) {
                     Toast.makeText(this@ShareReceiveActivity, "Failed to read file", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+                
+                // Check 25MB size limit for files
+                if (fileData.size > 25 * 1024 * 1024) {
+                    Toast.makeText(this@ShareReceiveActivity, "File too large (>25MB). Operation cancelled.", Toast.LENGTH_LONG).show()
                     return@launch
                 }
                 

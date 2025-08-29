@@ -214,11 +214,16 @@ class MqttClient(private val context: Context) {
         try {
             val decoded = MqttCodec.decodeMessage(message.payload)
             
-            // Check if message is from self (optional filter)
+            // Check if message is from self (filter based on send_to_self setting)
             val ownDeviceHash = MqttCodec.hashDeviceId(Config.deviceId)
             if (decoded.deviceId.contentEquals(ownDeviceHash)) {
-                Log.d("MqttClient", "Ignoring message from self")
-                return
+                val settings = Settings.getCurrentSettings()
+                if (!settings.sendToSelf) {
+                    Log.d("MqttClient", "Ignoring message from self (send_to_self = false)")
+                    return
+                } else {
+                    Log.d("MqttClient", "Processing message from self (send_to_self = true)")
+                }
             }
             
             CoroutineScope(Dispatchers.Main).launch {
@@ -233,7 +238,25 @@ class MqttClient(private val context: Context) {
     private fun handleSettingsMessage(message: MqttMessage) {
         val settingsData = String(message.payload)
         Log.d("MqttClient", "Settings message: $settingsData")
-        // TODO: Parse and handle settings
+        
+        try {
+            // Parse settings using the device ID from Config
+            val deviceId = Config.deviceId
+            if (deviceId.isNotEmpty()) {
+                val updated = Settings.parseSettingsFromMqtt(settingsData, deviceId)
+                if (updated) {
+                    Log.d("MqttClient", "Settings updated successfully")
+                    // Settings have been updated, the app should respond to these changes
+                    // The Settings object will handle persistence automatically
+                } else {
+                    Log.d("MqttClient", "No settings changes for this device")
+                }
+            } else {
+                Log.w("MqttClient", "Device ID not available, cannot parse settings")
+            }
+        } catch (e: Exception) {
+            Log.e("MqttClient", "Failed to handle settings message: ${e.message}", e)
+        }
     }
     
     private suspend fun cacheMessage(filename: String, contentType: String, payload: ByteArray) {

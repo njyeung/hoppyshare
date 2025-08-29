@@ -82,15 +82,11 @@ export default function AddDevice() {
         const downloadUrl = responseData.download_url;
         const filename = getFilenameForPlatform(selectedPlatform);
         
-        downloadAndRename(downloadUrl, filename)
+        await downloadAndRename(downloadUrl, filename)
+        
       } else {
         console.log('No download_url in response');
       }
-      
-      // Redirect back to dashboard after download starts
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1000);
       
     } catch (err) {
       console.error('Error details:', err);

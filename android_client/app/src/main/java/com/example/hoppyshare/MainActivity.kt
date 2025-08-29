@@ -5,10 +5,15 @@ import android.animation.ValueAnimator
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -23,6 +28,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     
+    private lateinit var titleText: TextView
     private lateinit var statusText: TextView
     private lateinit var mqttClient: MqttClient
     private lateinit var mascotIcon: ImageView
@@ -30,6 +36,9 @@ class MainActivity : AppCompatActivity() {
     private var animationRunnable: Runnable? = null
     private var currentAnimationFrame = 0
     private var isShowingNotification = false
+    private var isShowingError = false
+    private var errorHandler: Handler? = null
+    private var notificationSound: MediaPlayer? = null
     
     private val loadingIcons = arrayOf(
         R.drawable.loading_1,
@@ -62,14 +71,26 @@ class MainActivity : AppCompatActivity() {
             return
         }
         
+        // Initialize settings
+        Settings.initialize(this)
+        
+        // Set up settings change callback
+        Settings.setOnSettingsChangedCallback { newSettings ->
+            runOnUiThread {
+                onSettingsChanged(newSettings)
+            }
+        }
+        
         // Initialize MQTT client
         mqttClient = MqttManager.getInstance(this)
         
         setupUI()
+        setupNotificationSound()
         connectToMqtt()
     }
     
     private fun setupUI() {
+        titleText = findViewById(R.id.titleText)
         statusText = findViewById(R.id.statusText)
         mascotIcon = findViewById(R.id.mascotIcon)
         val pickFileButton = findViewById<Button>(R.id.pickFileButton)
@@ -98,6 +119,9 @@ class MainActivity : AppCompatActivity() {
         // Start loading animation
         startLoadingAnimation()
         
+        // Update device name in title
+        updateDeviceName()
+        
         // Set up message callback
         mqttClient.setOnMessageCallback {
             lifecycleScope.launch {
@@ -124,7 +148,63 @@ class MainActivity : AppCompatActivity() {
             // Switch to notification icon
             runOnUiThread {
                 showNotificationIcon()
+                vibratePhone()
+                playNotificationSound()
             }
+        }
+    }
+    
+    private fun vibratePhone() {
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Create a short vibration pattern - two quick pulses
+            val vibrationEffect = VibrationEffect.createWaveform(
+                longArrayOf(0, 200),
+                -1 // don't repeat
+            )
+            vibrator.vibrate(vibrationEffect)
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(400) // 400ms vibration for older devices
+        }
+    }
+    
+    private fun setupNotificationSound() {
+        try {
+            val assetFileDescriptor = assets.openFd("notification.wav")
+            notificationSound = MediaPlayer().apply {
+                setDataSource(assetFileDescriptor.fileDescriptor, assetFileDescriptor.startOffset, assetFileDescriptor.length)
+                prepare()
+                assetFileDescriptor.close()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Failed to setup notification sound: ${e.message}")
+        }
+    }
+    
+    private fun playNotificationSound() {
+        try {
+            val settings = Settings.getCurrentSettings()
+            if (!settings.muted) {
+                notificationSound?.let { player ->
+                    if (player.isPlaying) {
+                        player.stop()
+                        player.prepare()
+                    }
+                    player.start()
+                }
+            } else {
+                android.util.Log.d("MainActivity", "Notification sound muted by settings")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Failed to play notification sound: ${e.message}")
         }
     }
     
@@ -169,13 +249,18 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         stopLoadingAnimation()
+        errorHandler?.removeCallbacksAndMessages(null)
+        
+        // Clean up notification sound
+        notificationSound?.release()
+        notificationSound = null
     }
     
     private fun startLoadingAnimation() {
         animationHandler = Handler(Looper.getMainLooper())
         animationRunnable = object : Runnable {
             override fun run() {
-                if (!isShowingNotification) {
+                if (!isShowingNotification && !isShowingError) {
                     mascotIcon.setImageResource(loadingIcons[currentAnimationFrame])
                     mascotIcon.drawable?.isFilterBitmap = false // Disable anti-aliasing
                     currentAnimationFrame = (currentAnimationFrame + 1) % loadingIcons.size
@@ -201,8 +286,24 @@ class MainActivity : AppCompatActivity() {
     
     private fun resumeLoadingAnimation() {
         isShowingNotification = false
+        isShowingError = false
         startLoadingAnimation()
         animateBackgroundColor(getColor(R.color.primary_light), getColor(R.color.brand_white))
+    }
+    
+    private fun showErrorIcon() {
+        isShowingError = true
+        isShowingNotification = false
+        mascotIcon.setImageResource(R.drawable.error_icon)
+        mascotIcon.drawable?.isFilterBitmap = false // Disable anti-aliasing
+        animateBackgroundColor(getColor(R.color.brand_white), getColor(android.R.color.holo_red_light))
+        
+        // Clear error state after 3 seconds
+        errorHandler?.removeCallbacksAndMessages(null)
+        errorHandler = Handler(Looper.getMainLooper())
+        errorHandler?.postDelayed({
+            resumeLoadingAnimation()
+        }, 3000)
     }
     
     private fun handleSelectedFile(uri: Uri) {
@@ -235,10 +336,18 @@ class MainActivity : AppCompatActivity() {
         if (clipData != null && clipData.itemCount > 0) {
             val clipText = clipData.getItemAt(0).text
             if (clipText != null && clipText.isNotEmpty()) {
+                val textBytes = clipText.toString().toByteArray(Charsets.UTF_8)
+                
+                // Check 25MB size limit
+                if (textBytes.size > 25 * 1024 * 1024) {
+                    Toast.makeText(this, "Clipboard too large (>25MB). Operation cancelled.", Toast.LENGTH_LONG).show()
+                    showErrorIcon()
+                    return
+                }
+                
                 // Send clipboard text via MQTT
                 lifecycleScope.launch {
                     try {
-                        val textBytes = clipText.toString().toByteArray(Charsets.UTF_8)
                         val success = mqttClient.publish(textBytes, "text/plain", "clipboard.txt")
                         if (success) {
                             Toast.makeText(this@MainActivity, "Clipboard content sent!", Toast.LENGTH_SHORT).show()
@@ -265,5 +374,20 @@ class MainActivity : AppCompatActivity() {
             mainLayout.setBackgroundColor(animator.animatedValue as Int)
         }
         colorAnimator.start()
+    }
+    
+    private fun updateDeviceName() {
+        val settings = Settings.getCurrentSettings()
+        titleText.text = settings.nickname
+    }
+    
+    private fun onSettingsChanged(newSettings: AppSettings) {
+        android.util.Log.d("MainActivity", "Settings changed: $newSettings")
+        
+        // Update device name in title if it changed
+        updateDeviceName()
+        
+        // Note: muted setting is checked at runtime in playNotificationSound()
+        // send_to_self setting is handled in MQTT client
     }
 }
