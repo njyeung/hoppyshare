@@ -310,6 +310,8 @@ func HandleNewNotification(source MessageFrom) {
 	})
 	notificationTimerMu.Unlock()
 
+	updateIconState()
+
 	playsound.Play(notificationSound)
 
 	if settings.GetSettings().AutoCopy {

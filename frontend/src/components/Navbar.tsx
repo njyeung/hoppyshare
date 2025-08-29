@@ -3,12 +3,20 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar(){
-  const { user, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const router = useRouter()
+  
+  useEffect(()=>{
+    if (!loading && !user) {
+      router.push("/auth")
+    }
+  }, [loading, user])
 
   const handleLogout = async () => {
     await signOut();
