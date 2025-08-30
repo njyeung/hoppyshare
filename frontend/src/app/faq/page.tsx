@@ -2,15 +2,15 @@ import Footer from "@/components/Footer";
 import LandingNavbar from "@/components/LandingNavbar";
 
 export default function FAQ() {
-  return <section className="min-h-screen min-w-screen bg-white">
+  return <section className="min-h-screen w-full bg-white">
     <LandingNavbar />
-    <section className="w-full flex justify-center min-h-screen">
+    <section className="w-full flex justify-center">
       <div className="mt-12 py-20 max-w-4xl w-full text-secondary-darker px-6">
         <h1 className="text-4xl w-full mb-8 font-bold">Common Issues</h1>
 
         <div className="space-y-8">
           {/* Incorrect installation recovery */}
-          <div className="pb-6">
+          <div className="pb-6" id="uninstall">
             <h2 className="text-2xl font-semibold mb-3">HoppyShare not appearing in systray</h2>
             <p className=" leading-relaxed mb-6">
               If the setup steps aren't followed correctly, HoppyShare may get stuck in a "half-installed" state. A common problem is when HoppyShare doesn't relocate itself from the downloads directory. The fastest fix is to completely remove it and reinstall fresh.
@@ -53,9 +53,9 @@ export default function FAQ() {
             </div>
           </div>
 
-          {/* Mobile Setup Section */}
+          {/* Mobile Section */}
           <div className="pb-6" id="mobile">
-            <h2 className="text-2xl font-semibold mb-3">Mobile Setup</h2>
+            <h2 className="text-2xl font-semibold mb-3">Mobile</h2>
             
             <div className="ml-5 space-y-6">
               <div>
@@ -84,7 +84,31 @@ export default function FAQ() {
             </div>
           </div>
 
-          
+          {/* Device limitations */}
+          <div className="pb-6" id="limitations">
+            <h2 className="text-2xl font-semibold mb-3">Device Limitations</h2>
+            
+            <div className="ml-5 space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-secondary-darker">Android settings</h3>
+                <p className="leading-relaxed mb-4">
+                  Hoppyshare is not aware of the type of device that is registered. Thus, while the web gui shows all the settings for an Android device, the mobile app itself only listens for the following settings:
+                </p>
+                <ol className="space-y-2 ml-3 list-decimal list-inside">
+                  <li>Muted</li>
+                  <li>Device Nickname</li>
+                  <li>Send to self</li>
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-secondary-darker">Windows BLE</h3>
+                <p className="leading-relaxed">
+                  While the windows implementation of BLE can receive messages from other devices, it cannot send messages. It is also a bit buggy and may take a while to discover peers.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
