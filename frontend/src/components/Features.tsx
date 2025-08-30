@@ -25,7 +25,7 @@ export default function Features() {
     {
       title: "True Cross-Platform",
       blurb:
-        "Windows to macOS to Linux. Send a file on one device, save it on another. Copy an image on one device, paste natively on another.",
+        "Windows to macOS to Linux to Android. Send a file on one device, save it on another. Copy an image on one device, paste natively on another.",
       icon: MonitorSmartphone,
       kicker: "Your clipboard, everywhere",
     },
