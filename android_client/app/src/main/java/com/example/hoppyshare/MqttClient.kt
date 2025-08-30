@@ -31,6 +31,7 @@ class MqttClient(private val context: Context) {
     private var lastMessage: LastMessage? = null
 
     private var onMessageCallback: (() -> Unit)? = null
+    private var bleManager: BLEManager? = null
 
     data class LastMessage(
         val filename: String,
@@ -227,7 +228,7 @@ class MqttClient(private val context: Context) {
             }
             
             CoroutineScope(Dispatchers.Main).launch {
-                cacheMessage(decoded.filename, decoded.type, decoded.payload)
+                internalCacheMessage(decoded.filename, decoded.type, decoded.payload)
             }
 
         } catch (e: Exception) {
@@ -259,10 +260,14 @@ class MqttClient(private val context: Context) {
         }
     }
     
-    private suspend fun cacheMessage(filename: String, contentType: String, payload: ByteArray) {
+    suspend fun cacheMessage(filename: String, contentType: String, payload: ByteArray) {
         lastMessageMutex.withLock {
             lastMessage = LastMessage(filename, contentType, payload)
         }
+    }
+    
+    private suspend fun internalCacheMessage(filename: String, contentType: String, payload: ByteArray) {
+        cacheMessage(filename, contentType, payload)
         
         onMessageCallback?.invoke()
     }
@@ -271,6 +276,14 @@ class MqttClient(private val context: Context) {
         return lastMessageMutex.withLock {
             lastMessage
         }
+    }
+    
+    fun getClientId(): String {
+        return clientId
+    }
+    
+    fun setBLEManager(bleManager: BLEManager) {
+        this.bleManager = bleManager
     }
     
     suspend fun clearLastMessage() {
@@ -305,6 +318,20 @@ class MqttClient(private val context: Context) {
 
             val topic = "users/$clientId/notes"
             mqttClient.publish(topic, message)
+            Log.d("MqttClient", "Published via MQTT: $filename ($contentType)")
+            
+            // Also publish via BLE if available
+            bleManager?.let { ble ->
+                if (ble.isStarted()) {
+                    try {
+                        ble.sendData(encoded)
+                        Log.d("MqttClient", "Also published via BLE: $filename")
+                    } catch (e: Exception) {
+                        Log.e("MqttClient", "Failed to publish via BLE: ${e.message}", e)
+                    }
+                }
+            }
+            
             true
         } catch (e: Exception) {
             Log.e("MqttClient", "Failed to publish: ${e.message}", e)

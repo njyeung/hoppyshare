@@ -2,9 +2,11 @@ package com.example.hoppyshare
 
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
+import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
@@ -18,6 +20,8 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -32,6 +36,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var mqttClient: MqttClient
     private lateinit var mascotIcon: ImageView
+    private lateinit var bleToggleButton: Button
+    private var bleManager: BLEManager? = null
     private var animationHandler: Handler? = null
     private var animationRunnable: Runnable? = null
     private var currentAnimationFrame = 0
@@ -87,12 +93,22 @@ class MainActivity : AppCompatActivity() {
         setupUI()
         setupNotificationSound()
         connectToMqtt()
+        
+        // Check if this activity was started to show an error
+        handleErrorIntent()
+    }
+    
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent) // Update the activity's intent
+        handleErrorIntent()
     }
     
     private fun setupUI() {
         titleText = findViewById(R.id.titleText)
         statusText = findViewById(R.id.statusText)
         mascotIcon = findViewById(R.id.mascotIcon)
+        bleToggleButton = findViewById<Button>(R.id.bleToggleButton)
         val pickFileButton = findViewById<Button>(R.id.pickFileButton)
         val sendClipboardButton = findViewById<Button>(R.id.sendClipboardButton)
         
@@ -102,7 +118,13 @@ class MainActivity : AppCompatActivity() {
         }
         
         sendClipboardButton.setOnClickListener {
+            android.util.Log.d("MainActivity", "SENDING CLIPBOARD CONTENT")
             sendClipboardContent()
+        }
+        
+        bleToggleButton.setOnClickListener {
+            android.util.Log.d("MainActivity", "BLE toggle button clicked")
+            toggleBLE()
         }
         
         mascotIcon.setOnClickListener {
@@ -136,6 +158,8 @@ class MainActivity : AppCompatActivity() {
             val clientId = mqttClient.connect()
             if (clientId != null) {
                 statusText.text = "Connected"
+                // Initialize BLE after MQTT connects and Config is loaded
+                initializeBLE()
             } else {
                 statusText.text = "Failed to connect. Restart app"
             }
@@ -221,15 +245,12 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         
         lifecycleScope.launch {
-            // Check if message was cleared by MessageViewActivity
             val hasMessage = mqttClient.getLastMessage() != null
             if (!hasMessage && isShowingNotification) {
-                // Message was viewed/cleared, resume loading animation
                 runOnUiThread {
                     resumeLoadingAnimation()
                 }
             } else if (hasMessage && !isShowingNotification) {
-                // Message arrived while we were away, show notification
                 runOnUiThread {
                     showNotificationIcon()
                 }
@@ -254,6 +275,9 @@ class MainActivity : AppCompatActivity() {
         // Clean up notification sound
         notificationSound?.release()
         notificationSound = null
+        
+        // Stop BLE if running
+        bleManager?.stop()
     }
     
     private fun startLoadingAnimation() {
@@ -292,16 +316,17 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun showErrorIcon() {
+        android.util.Log.d("MainActivity", "showErrorIcon called")
         isShowingError = true
         isShowingNotification = false
         mascotIcon.setImageResource(R.drawable.error_icon)
         mascotIcon.drawable?.isFilterBitmap = false // Disable anti-aliasing
-        animateBackgroundColor(getColor(R.color.brand_white), getColor(android.R.color.holo_red_light))
         
         // Clear error state after 3 seconds
         errorHandler?.removeCallbacksAndMessages(null)
         errorHandler = Handler(Looper.getMainLooper())
         errorHandler?.postDelayed({
+            android.util.Log.d("MainActivity", "Error timeout - resuming loading animation")
             resumeLoadingAnimation()
         }, 3000)
     }
@@ -345,11 +370,30 @@ class MainActivity : AppCompatActivity() {
                     return
                 }
                 
-                // Send clipboard text via MQTT
+                // Send clipboard text via MQTT and BLE
                 lifecycleScope.launch {
                     try {
-                        val success = mqttClient.publish(textBytes, "text/plain", "clipboard.txt")
-                        if (success) {
+                        val mqttSuccess = mqttClient.publish(textBytes, "text/plain", "clipboard.txt")
+                        
+                        // Also send via BLE if enabled (with 3MB size limit)
+                        bleManager?.let { ble ->
+                            if (ble.isStarted()) {
+                                try {
+                                    if (textBytes.size > 3 * 1024 * 1024) {
+                                        Toast.makeText(this@MainActivity, "Clipboard too large for BLE (>3MB)", Toast.LENGTH_SHORT).show()
+                                        android.util.Log.d("MainActivity", "Clipboard too large for BLE (>3MB), skipping BLE send")
+                                    } else {
+                                        val encoded = MqttCodec.encodeMessage("text/plain", "clipboard.txt", Config.deviceId, textBytes)
+                                        ble.sendData(encoded)
+                                        android.util.Log.d("MainActivity", "Clipboard sent via BLE")
+                                    }
+                                } catch (e: Exception) {
+                                    android.util.Log.e("MainActivity", "Failed to send clipboard via BLE: ${e.message}", e)
+                                }
+                            }
+                        }
+                        
+                        if (mqttSuccess) {
                             Toast.makeText(this@MainActivity, "Clipboard content sent!", Toast.LENGTH_SHORT).show()
                         } else {
                             Toast.makeText(this@MainActivity, "Failed to send clipboard", Toast.LENGTH_SHORT).show()
@@ -389,5 +433,199 @@ class MainActivity : AppCompatActivity() {
         
         // Note: muted setting is checked at runtime in playNotificationSound()
         // send_to_self setting is handled in MQTT client
+    }
+    
+    private fun initializeBLE() {
+        android.util.Log.d("MainActivity", "initializeBLE called")
+        
+        if (!Config.isConfigured()) {
+            android.util.Log.w("MainActivity", "Config not loaded, cannot initialize BLE")
+            return
+        }
+        
+        android.util.Log.d("MainActivity", "Creating BLE manager with clientId: ${mqttClient.getClientId()}, deviceId: ${Config.deviceId}")
+        
+        try {
+            bleManager = BLEManager(this, mqttClient.getClientId(), Config.deviceId)
+            bleManager?.setOnMessageCallback {
+                lifecycleScope.launch {
+                    handleIncomingBLEMessage()
+                }
+            }
+            
+            // Connect BLE manager to MQTT client for dual publishing
+            bleManager?.let { mqttClient.setBLEManager(it) }
+            
+            android.util.Log.d("MainActivity", "BLE manager initialized: ${bleManager != null}")
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Failed to initialize BLE: ${e.message}", e)
+        }
+    }
+    
+    private fun toggleBLE() {
+        android.util.Log.d("MainActivity", "toggleBLE called")
+        android.util.Log.d("MainActivity", "bleManager is null: ${bleManager == null}")
+        
+        bleManager?.let { ble ->
+            if (ble.isStarted()) {
+                android.util.Log.d("MainActivity", "Stopping BLE")
+                ble.stop()
+                Toast.makeText(this, "BLE stopped", Toast.LENGTH_SHORT).show()
+                bleToggleButton.text = "Start BLE"
+                bleToggleButton.backgroundTintList = getColorStateList(R.color.secondary)
+            } else {
+                android.util.Log.d("MainActivity", "Attempting to start BLE")
+                
+                // Check and request permissions first
+                if (hasRequiredBLEPermissions()) {
+                    android.util.Log.d("MainActivity", "Permissions granted, starting BLE")
+                    try {
+                        if (ble.start()) {
+                            Toast.makeText(this, "BLE started", Toast.LENGTH_SHORT).show()
+                            bleToggleButton.text = "Stop BLE"
+                            bleToggleButton.backgroundTintList = getColorStateList(R.color.button_primary_background)
+                        } else {
+                            Toast.makeText(this, "Failed to start BLE", Toast.LENGTH_LONG).show()
+                            bleToggleButton.text = "Start BLE"
+                            bleToggleButton.backgroundTintList = getColorStateList(R.color.secondary)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("MainActivity", "BLE start crashed: ${e.message}", e)
+                        Toast.makeText(this, "BLE start crashed: ${e.message}", Toast.LENGTH_LONG).show()
+                        bleToggleButton.text = "Start BLE"
+                        bleToggleButton.backgroundTintList = getColorStateList(R.color.secondary)
+                    }
+                } else {
+                    android.util.Log.d("MainActivity", "Requesting BLE permissions")
+                    requestBLEPermissions()
+                    return
+                }
+            }
+        }
+    }
+    
+    private fun hasRequiredBLEPermissions(): Boolean {
+        val requiredPermissions = mutableListOf<String>()
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requiredPermissions.addAll(listOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_ADVERTISE,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ))
+        } else {
+            requiredPermissions.addAll(listOf(
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ))
+        }
+        
+        return requiredPermissions.all { permission ->
+            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+    
+    private fun requestBLEPermissions() {
+        val requiredPermissions = mutableListOf<String>()
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requiredPermissions.addAll(listOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_ADVERTISE,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ))
+        } else {
+            requiredPermissions.addAll(listOf(
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ))
+        }
+        
+        ActivityCompat.requestPermissions(this, requiredPermissions.toTypedArray(), BLE_PERMISSION_REQUEST_CODE)
+    }
+    
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        
+        if (requestCode == BLE_PERMISSION_REQUEST_CODE) {
+            val allGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+            android.util.Log.d("MainActivity", "BLE permissions result: allGranted = $allGranted")
+            
+            if (allGranted) {
+                // Try to start BLE again
+                bleManager?.let { ble ->
+                    try {
+                        if (ble.start()) {
+                            Toast.makeText(this, "BLE started", Toast.LENGTH_SHORT).show()
+                            bleToggleButton.text = "Stop BLE"
+                            bleToggleButton.backgroundTintList = getColorStateList(R.color.button_primary_background)
+                        } else {
+                            Toast.makeText(this, "Failed to start BLE", Toast.LENGTH_LONG).show()
+                            bleToggleButton.text = "Start BLE"
+                            bleToggleButton.backgroundTintList = getColorStateList(R.color.secondary)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("MainActivity", "BLE start crashed in permissions callback: ${e.message}", e)
+                        Toast.makeText(this, "BLE start crashed: ${e.message}", Toast.LENGTH_LONG).show()
+                        bleToggleButton.text = "Start BLE"
+                        bleToggleButton.backgroundTintList = getColorStateList(R.color.secondary)
+                    }
+                }
+            } else {
+                Toast.makeText(this, "BLE permissions denied", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    
+    private suspend fun handleIncomingBLEMessage() {
+        bleManager?.getLastMessage()?.let { (filename, contentType, data) ->
+            // Store BLE message in MQTT client for unified access
+            mqttClient.cacheMessage(filename, contentType, data)
+            
+            // Show notification icon and play sound/vibrate
+            runOnUiThread {
+                showNotificationIcon()
+                vibratePhone()
+                playNotificationSound()
+            }
+        }
+    }
+    
+    private fun handleErrorIntent() {
+        val showError = intent.getBooleanExtra(EXTRA_SHOW_ERROR, false)
+        val errorMessage = intent.getStringExtra(EXTRA_ERROR_MESSAGE)
+        
+        android.util.Log.d("MainActivity", "handleErrorIntent: showError=$showError, errorMessage=$errorMessage")
+        
+        if (showError) {
+            android.util.Log.d("MainActivity", "Showing error icon and toast")
+            showErrorIcon()
+            if (errorMessage != null) {
+                Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
+            }
+            
+            // Clear the intent extras so error doesn't show again on config changes
+            intent.removeExtra(EXTRA_SHOW_ERROR)
+            intent.removeExtra(EXTRA_ERROR_MESSAGE)
+        }
+    }
+    
+    companion object {
+        private const val EXTRA_SHOW_ERROR = "show_error"
+        private const val EXTRA_ERROR_MESSAGE = "error_message"
+        private const val BLE_PERMISSION_REQUEST_CODE = 123
+        
+        fun showError(context: Context, message: String) {
+            android.util.Log.d("MainActivity", "showError called with message: $message")
+            val intent = Intent(context, MainActivity::class.java).apply {
+                putExtra(EXTRA_SHOW_ERROR, true)
+                putExtra(EXTRA_ERROR_MESSAGE, message)
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+            android.util.Log.d("MainActivity", "Starting activity with error intent")
+            context.startActivity(intent)
+        }
     }
 }

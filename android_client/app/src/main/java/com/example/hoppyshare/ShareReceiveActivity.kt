@@ -185,7 +185,8 @@ class ShareReceiveActivity : AppCompatActivity() {
                     
                     // Check 25MB size limit for text
                     if (textBytes.size > 25 * 1024 * 1024) {
-                        Toast.makeText(this@ShareReceiveActivity, "Text too large (>25MB). Operation cancelled.", Toast.LENGTH_LONG).show()
+                        MainActivity.showError(this@ShareReceiveActivity, "Text too large (>25MB). Operation cancelled.")
+                        finish()
                         return@launch
                     }
                     
@@ -218,7 +219,8 @@ class ShareReceiveActivity : AppCompatActivity() {
                 
                 // Check 25MB size limit for files
                 if (fileData.size > 25 * 1024 * 1024) {
-                    Toast.makeText(this@ShareReceiveActivity, "File too large (>25MB). Operation cancelled.", Toast.LENGTH_LONG).show()
+                    MainActivity.showError(this@ShareReceiveActivity, "File too large (>25MB). Operation cancelled.")
+                    finish()
                     return@launch
                 }
                 

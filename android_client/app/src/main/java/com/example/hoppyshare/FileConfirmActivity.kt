@@ -109,8 +109,9 @@ class FileConfirmActivity : AppCompatActivity() {
                 
                 // Check 25MB size limit
                 if (fileData.size > 25 * 1024 * 1024) {
-                    Toast.makeText(this@FileConfirmActivity, "File too large (>25MB). Operation cancelled.", Toast.LENGTH_LONG).show()
                     android.util.Log.e("FileConfirm", "File too large: ${fileData.size} bytes")
+                    MainActivity.showError(this@FileConfirmActivity, "File too large (>25MB). Operation cancelled.")
+                    finish()
                     return@launch
                 }
                 
