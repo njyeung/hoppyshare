@@ -2,14 +2,15 @@ import Footer from "@/components/Footer";
 import LandingNavbar from "@/components/LandingNavbar";
 
 export default function FAQ() {
-  return <section className="w-full bg-white">
+  return <section className="min-h-screen w-full bg-white">
     <LandingNavbar />
-    <section className="w-full flex justify-center min-h-screen">
+    <section className="w-full flex justify-center">
       <div className="mt-12 py-20 max-w-4xl w-full text-secondary-darker px-6">
         <h1 className="text-4xl w-full mb-8 font-bold">Common Issues</h1>
-        
+
         <div className="space-y-8">
-          <div className="pb-6">
+          {/* Incorrect installation recovery */}
+          <div className="pb-6" id="uninstall">
             <h2 className="text-2xl font-semibold mb-3">HoppyShare not appearing in systray</h2>
             <p className=" leading-relaxed mb-6">
               If the setup steps aren't followed correctly, HoppyShare may get stuck in a "half-installed" state. A common problem is when HoppyShare doesn't relocate itself from the downloads directory. The fastest fix is to completely remove it and reinstall fresh.
@@ -28,9 +29,9 @@ export default function FAQ() {
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-secondary-darker">2. Delete application files manually</h3>
                 <ul className="space-y-2 ml-3">
-                  <li><strong>Windows:</strong> Remove <code className="bg-gray-100 px-2 py-1 rounded">%LOCALAPPDATA%\HoppyShare\HoppyShare.exe</code>.</li>
-                  <li><strong>macOS:</strong> Delete <code className="bg-gray-100 px-2 py-1 rounded">~/Library/Application Support/HoppyShare/HoppyShare</code>.</li>
-                  <li><strong>Linux:</strong> Remove <code className="bg-gray-100 px-2 py-1 rounded">~/.local/bin/hoppyshare</code>.</li>
+                  <li><strong>Windows:</strong> Remove <code className="bg-gray-100 px-2 py-1 rounded break-all">%LOCALAPPDATA%\HoppyShare\HoppyShare.exe</code>.</li>
+                  <li><strong>macOS:</strong> Delete <code className="bg-gray-100 px-2 py-1 rounded break-all">~/Library/Application Support/HoppyShare/HoppyShare</code>.</li>
+                  <li><strong>Linux:</strong> Remove <code className="bg-gray-100 px-2 py-1 rounded break-all">~/.local/bin/hoppyshare</code>.</li>
                 </ul>
               </div>
 
@@ -48,6 +49,63 @@ export default function FAQ() {
                 <ul className="space-y-2 ml-3">
                   <li>Download the latest HoppyShare binary, follow the setup steps for your OS closely, and you should be good to go.</li>
                 </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Section */}
+          <div className="pb-6" id="mobile">
+            <h2 className="text-2xl font-semibold mb-3">Mobile</h2>
+            
+            <div className="ml-5 space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-secondary-darker">How do I set up HoppyShare on my Android phone?</h3>
+                <ol className="space-y-2 ml-3 list-decimal list-inside">
+                  <li>Download the HoppyShare app from the Google Play Store.</li>
+                  <li>Open the app. On first launch, it will automatically take you to our secure setup page.</li>
+                  <li>Sign in with Google when prompted.</li>
+                  <li>You'll be redirected back into the app, and your phone will be added automatically.</li>
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-secondary-darker">Can I start the mobile setup from the browser?</h3>
+                <p className="leading-relaxed mb-4">
+                  <strong>No.</strong> If you visit <code className="bg-gray-100 px-2 py-1 rounded">hoppyshare.com/add-device/mobile</code> on your phone, a device will be added—but the mobile setup won't complete from the browser. The process only works when it's started inside the Android app.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-secondary-darker">iOS availability</h3>
+                <p className="leading-relaxed">
+                  Not yet—iOS is coming soon. For now, only the Android app is supported for mobile devices.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Device limitations */}
+          <div className="pb-6" id="limitations">
+            <h2 className="text-2xl font-semibold mb-3">Device Limitations</h2>
+            
+            <div className="ml-5 space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-secondary-darker">Android settings</h3>
+                <p className="leading-relaxed mb-4">
+                  Hoppyshare is not aware of the type of device that is registered. Thus, while the web gui shows all the settings for an Android device, the mobile app itself only listens for the following settings:
+                </p>
+                <ol className="space-y-2 ml-3 list-decimal list-inside">
+                  <li>Muted</li>
+                  <li>Device Nickname</li>
+                  <li>Send to self</li>
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-secondary-darker">Windows BLE</h3>
+                <p className="leading-relaxed">
+                  While the windows implementation of BLE can receive messages from other devices, it cannot send messages. It is also a bit buggy and may take a while to discover peers.
+                </p>
               </div>
             </div>
           </div>

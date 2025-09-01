@@ -25,7 +25,7 @@ export default function Features() {
     {
       title: "True Cross-Platform",
       blurb:
-        "Windows to macOS to Linux. Send a file on one device, save it on another. Copy an image on one device, paste natively on another.",
+        "Windows to macOS to Linux to Android. Send a file on one device, save it on another. Copy an image on one device, paste natively on another.",
       icon: MonitorSmartphone,
       kicker: "Your clipboard, everywhere",
     },
@@ -39,7 +39,7 @@ export default function Features() {
     {
       title: "Large File Support",
       blurb:
-        "Send files up to 80MB — perfect for screen recordings, logs, decks, and artifacts.",
+        "Send files up to 25MB — perfect for images, screen recordings, logs, decks, and artifacts.",
       icon: FileUp,
       kicker: "Optimized chunking, minimal wait",
     },

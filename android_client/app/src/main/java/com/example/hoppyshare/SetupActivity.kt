@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -13,6 +14,8 @@ class SetupActivity : ComponentActivity() {
     
     private lateinit var statusText: TextView
     private lateinit var finishButton: Button
+    private lateinit var progressBar: android.widget.ProgressBar
+    private lateinit var checkmarkIcon: ImageView
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,6 +23,12 @@ class SetupActivity : ComponentActivity() {
         
         statusText = findViewById(R.id.statusText)
         finishButton = findViewById(R.id.finishButton)
+        progressBar = findViewById(R.id.progressBar)
+        checkmarkIcon = findViewById(R.id.checkmarkIcon)
+        
+        // Disable anti-aliasing for pixel art icon
+        val setupIcon = findViewById<ImageView>(R.id.setupIcon)
+        setupIcon.drawable?.isFilterBitmap = false
         
         finishButton.setOnClickListener {
             // Navigate to main activity
@@ -94,6 +103,10 @@ class SetupActivity : ComponentActivity() {
         statusText.setTextColor(ContextCompat.getColor(this, R.color.success_green))
         finishButton.text = "Continue to App"
         finishButton.isEnabled = true
+        
+        // Hide spinner and show checkmark
+        progressBar.visibility = android.view.View.GONE
+        checkmarkIcon.visibility = android.view.View.VISIBLE
         
         Toast.makeText(this, "HoppyShare is now configured!", Toast.LENGTH_LONG).show()
     }

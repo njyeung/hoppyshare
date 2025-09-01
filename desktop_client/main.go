@@ -310,6 +310,8 @@ func HandleNewNotification(source MessageFrom) {
 	})
 	notificationTimerMu.Unlock()
 
+	updateIconState()
+
 	playsound.Play(notificationSound)
 
 	if settings.GetSettings().AutoCopy {
@@ -345,8 +347,9 @@ func PublishClipboard() {
 	updateIconState()
 
 	content, mimeType, err := clipboard.Read()
-
-	if len([]byte(content)) > 80*1024*1024 {
+	
+	// clipboard > 25mb
+	if len([]byte(content)) > 25*1024*1024 {
 		notifyErr := notification.Notification("Clipboard too large (>80MB). Operation cancelled.")
 		if notifyErr != nil {
 			log.Println("Notification error:", notifyErr)
@@ -433,8 +436,8 @@ func PublishFile() {
 		return
 	}
 
-	// file size > 80MB
-	if len(fileBytes) > 80*1024*1024 {
+	// file size > 25MB
+	if len(fileBytes) > 25*1024*1024 {
 		notifyErr := notification.Notification("File is too large (>80MB). Operation cancelled.")
 		if notifyErr != nil {
 			log.Println("Notification error:", notifyErr)

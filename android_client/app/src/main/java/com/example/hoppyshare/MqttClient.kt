@@ -31,6 +31,7 @@ class MqttClient(private val context: Context) {
     private var lastMessage: LastMessage? = null
 
     private var onMessageCallback: (() -> Unit)? = null
+    private var bleManager: BLEManager? = null
 
     data class LastMessage(
         val filename: String,
@@ -214,15 +215,20 @@ class MqttClient(private val context: Context) {
         try {
             val decoded = MqttCodec.decodeMessage(message.payload)
             
-            // Check if message is from self (optional filter)
+            // Check if message is from self (filter based on send_to_self setting)
             val ownDeviceHash = MqttCodec.hashDeviceId(Config.deviceId)
             if (decoded.deviceId.contentEquals(ownDeviceHash)) {
-                Log.d("MqttClient", "Ignoring message from self")
-                return
+                val settings = Settings.getCurrentSettings()
+                if (!settings.sendToSelf) {
+                    Log.d("MqttClient", "Ignoring message from self (send_to_self = false)")
+                    return
+                } else {
+                    Log.d("MqttClient", "Processing message from self (send_to_self = true)")
+                }
             }
             
             CoroutineScope(Dispatchers.Main).launch {
-                cacheMessage(decoded.filename, decoded.type, decoded.payload)
+                internalCacheMessage(decoded.filename, decoded.type, decoded.payload)
             }
 
         } catch (e: Exception) {
@@ -233,13 +239,35 @@ class MqttClient(private val context: Context) {
     private fun handleSettingsMessage(message: MqttMessage) {
         val settingsData = String(message.payload)
         Log.d("MqttClient", "Settings message: $settingsData")
-        // TODO: Parse and handle settings
+        
+        try {
+            // Parse settings using the device ID from Config
+            val deviceId = Config.deviceId
+            if (deviceId.isNotEmpty()) {
+                val updated = Settings.parseSettingsFromMqtt(settingsData, deviceId)
+                if (updated) {
+                    Log.d("MqttClient", "Settings updated successfully")
+                    // Settings have been updated, the app should respond to these changes
+                    // The Settings object will handle persistence automatically
+                } else {
+                    Log.d("MqttClient", "No settings changes for this device")
+                }
+            } else {
+                Log.w("MqttClient", "Device ID not available, cannot parse settings")
+            }
+        } catch (e: Exception) {
+            Log.e("MqttClient", "Failed to handle settings message: ${e.message}", e)
+        }
     }
     
-    private suspend fun cacheMessage(filename: String, contentType: String, payload: ByteArray) {
+    suspend fun cacheMessage(filename: String, contentType: String, payload: ByteArray) {
         lastMessageMutex.withLock {
             lastMessage = LastMessage(filename, contentType, payload)
         }
+    }
+    
+    private suspend fun internalCacheMessage(filename: String, contentType: String, payload: ByteArray) {
+        cacheMessage(filename, contentType, payload)
         
         onMessageCallback?.invoke()
     }
@@ -248,6 +276,14 @@ class MqttClient(private val context: Context) {
         return lastMessageMutex.withLock {
             lastMessage
         }
+    }
+    
+    fun getClientId(): String {
+        return clientId
+    }
+    
+    fun setBLEManager(bleManager: BLEManager) {
+        this.bleManager = bleManager
     }
     
     suspend fun clearLastMessage() {
@@ -282,6 +318,20 @@ class MqttClient(private val context: Context) {
 
             val topic = "users/$clientId/notes"
             mqttClient.publish(topic, message)
+            Log.d("MqttClient", "Published via MQTT: $filename ($contentType)")
+            
+            // Also publish via BLE if available
+            bleManager?.let { ble ->
+                if (ble.isStarted()) {
+                    try {
+                        ble.sendData(encoded)
+                        Log.d("MqttClient", "Also published via BLE: $filename")
+                    } catch (e: Exception) {
+                        Log.e("MqttClient", "Failed to publish via BLE: ${e.message}", e)
+                    }
+                }
+            }
+            
             true
         } catch (e: Exception) {
             Log.e("MqttClient", "Failed to publish: ${e.message}", e)

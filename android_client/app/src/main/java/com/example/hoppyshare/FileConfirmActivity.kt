@@ -107,6 +107,14 @@ class FileConfirmActivity : AppCompatActivity() {
                     return@launch
                 }
                 
+                // Check 25MB size limit
+                if (fileData.size > 25 * 1024 * 1024) {
+                    android.util.Log.e("FileConfirm", "File too large: ${fileData.size} bytes")
+                    MainActivity.showError(this@FileConfirmActivity, "File too large (>25MB). Operation cancelled.")
+                    finish()
+                    return@launch
+                }
+                
                 android.util.Log.d("FileConfirm", "File data read successfully, size: ${fileData.size} bytes")
 
                 val success = mqttClient.publish(fileData, mimeType, fileName)

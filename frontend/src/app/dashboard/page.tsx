@@ -32,9 +32,7 @@ export default function Dashboard() {
 
   const deleteDeviceMutation = useMutation({
     mutationFn: async (deviceId: string) => {
-      console.log('Attempting to delete device with ID:', deviceId);
       const url = `https://en43r23fua.execute-api.us-east-2.amazonaws.com/prod/api/devices/${deviceId}`;
-      console.log('DELETE URL:', url);
       
       const response = await apiDelete(url);
       console.log('Delete response status:', response.status);

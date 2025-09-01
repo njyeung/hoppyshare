@@ -21,7 +21,11 @@ export default function AddDevice() {
     const platform = window.navigator.platform;
     
     if (/Android/i.test(userAgent) || /iPhone|iPad|iPod/i.test(userAgent)) {
-      router.push("/add-device/mobile")
+      // Redirect mobile users to FAQ for mobile setup instructions
+      if (typeof window !== 'undefined') {
+        window.location.href = '/faq#mobile';
+      }
+      return null;
     }
 
     if (platform.toUpperCase().indexOf('MAC') >= 0 || userAgent.indexOf('Mac') >= 0) {
@@ -78,15 +82,11 @@ export default function AddDevice() {
         const downloadUrl = responseData.download_url;
         const filename = getFilenameForPlatform(selectedPlatform);
         
-        downloadAndRename(downloadUrl, filename)
+        await downloadAndRename(downloadUrl, filename)
+        
       } else {
         console.log('No download_url in response');
       }
-      
-      // Redirect back to dashboard after download starts
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1000);
       
     } catch (err) {
       console.error('Error details:', err);

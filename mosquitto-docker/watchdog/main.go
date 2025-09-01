@@ -78,7 +78,7 @@ func reloadMosquitto() {
         return
     }
 
-    log.Println("🔄 Mosquitto reload triggered via Flask")
+    log.Println("Mosquitto reload triggered via Flask")
 }
 
 func restoreAllUsers() {
@@ -147,7 +147,7 @@ func handleMessage(client mqtt.Client, msg mqtt.Message) {
     log.Printf("User %s sent message #%d", uid, count)
 
     if count > int64(messageCap) {
-        log.Printf("⚠️  User %s exceeded message limit", uid)
+        log.Printf("User %s exceeded message limit", uid)
         blockUser(uid)
     }
 }
@@ -170,14 +170,14 @@ func blockUser(uid string) {
     // Reload Mosquitto
     reloadMosquitto()
 
-    log.Printf("⛔ Blocked user %s for 10 minutes", uid)
+    log.Printf("Blocked user %s for 10 minutes", uid)
 
     // Schedule unblock after 10 minutes
     go func() {
         time.Sleep(10 * time.Minute)
 
         if _, err := os.Stat(aclFile); os.IsNotExist(err) {
-            log.Printf("⚠️ ACL file for user %s no longer exists, skipping unblock", uid)
+            log.Printf("ACL file for user %s no longer exists, skipping unblock", uid)
             return
         }
 
@@ -194,7 +194,7 @@ func blockUser(uid string) {
         // Reload Mosquitto
         reloadMosquitto()
 
-        log.Printf("✅ Unblocked user %s", uid)
+        log.Printf("Unblocked user %s", uid)
     }()
 }
 

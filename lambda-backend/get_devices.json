@@ -1,0 +1,10 @@
+{
+  "httpMethod": "GET",
+  "resource": "/api/devices",
+  "path": "/api/devices",
+  "headers": {
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6Ilp4cUxVaERpNXFNREtCazkiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3F0bGFkYWd0dGFpemZ4ZHRra2plLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI2OTlmODExNS1hNjdmLTQ2MzMtYjIyMS0xZTRlNGRiMzczM2IiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzUzNDYwMDE0LCJpYXQiOjE3NTM0NTY0MTQsImVtYWlsIjoibmlja2p5ZXVuZ0BnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc1MzQ1NjQxNH1dLCJzZXNzaW9uX2lkIjoiOTk1ZTc3NTctOTk4Yy00ZmZhLWFjNGMtM2VkNzQ3YTAzY2M5IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.guiGWG-fCNKWYz8NibXonOYy8HdOZoiLU9xP14epb8k"
+  },
+  "body": "{}",
+  "isBase64Encoded": false
+}

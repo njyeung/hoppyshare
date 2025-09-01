@@ -14,21 +14,34 @@ export default function Mobile() {
   const [error, setError] = useState<string | null>(null)
   const {user, loading, signInWithGoogle} = useAuth()
   const router = useRouter()
-  function detectOS() {
-    if (typeof window === 'undefined') return 'MACOS';
+  // function detectOS() {
+  //   if (typeof window === 'undefined') return 'MACOS';
     
-    const userAgent = window.navigator.userAgent;
+  //   const userAgent = window.navigator.userAgent;
     
-    if (/Android/i.test(userAgent)) {
-      setOs("ANDROID")
+  //   if (/Android/i.test(userAgent)) {
+  //     setOs("ANDROID")
+  //   }
+  //   else if (/iPhone|iPad|iPod/i.test(userAgent)) {
+  //     setOs("IOS")
+  //   }
+  //   else {
+  //     router.push("/")
+  //   }
+  // }
+
+  useEffect(()=>{
+    // detectOS()
+    if (!loading && !user) {
+      localStorage.setItem('mobileSetup', 'true');
+      router.push("/auth")
     }
-    else if (/iPhone|iPad|iPod/i.test(userAgent)) {
-      setOs("IOS")
+    else if (!loading && user) {
+      // User is authenticated, fetch certificates
+      fetchDeviceCerts()
     }
-    else {
-      router.push("/")
-    }
-  }
+
+  }, [loading, user])
 
   const fetchDeviceCerts = async () => {
     if (!user || isLoading) return
@@ -55,6 +68,8 @@ export default function Mobile() {
         
         
         window.location.href = `hoppyshare://setup?${params.toString()}`
+
+        router.push("/dashboard")
       } else {
         setError(data.error || 'Failed to get device certificates')
       }
@@ -64,19 +79,7 @@ export default function Mobile() {
       setIsLoading(false)
     }
   }
-
-  useEffect(()=>{
-    detectOS()
-    if (!loading && !user) {
-      sessionStorage.setItem('mobileSetup', 'true');
-      router.push("/auth")
-    }
-    else if (!loading && user) {
-      // User is authenticated, fetch certificates
-      fetchDeviceCerts()
-    }
-
-  }, [loading, user])
+  
   
   if (loading || isLoading) {
     return (

@@ -19,7 +19,6 @@
     <!-- Status Colors -->
     <color name="success_green">#4CAF50</color>
     <color name="error_red">#F44336</color>
-    <color name="background_light">#FAFAFA</color>
     
     <!-- Button Colors -->
     <color name="button_primary_background">#f0b77e</color>

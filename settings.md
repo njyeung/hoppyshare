@@ -33,7 +33,7 @@ This document defines the standardized device settings schema used across all co
 | `nickname` | `string` | `"Unnamed Device"` | Human-readable device name displayed in UI |
 | `enabled` | `boolean` | `true` | Master switch - when false, device ignores all messages |
 | `auto_copy` | `boolean` | `false` | Automatically copy received messages to clipboard |
-| `LightAniations` | `boolean` | `false` | Automatically paste after auto_copy (requires auto_copy: true) |
+| `LightAniations` | `boolean` | `false` | Simple animations |
 | `cache_time` | `number` | `30` | Time in seconds messages remain accessible (max 300s) |
 | `muted` | `boolean` | `false` | Disable all notification sounds |
 | `send_to_self` | `boolean` | `true` | Allow receiving messages from the same device |
