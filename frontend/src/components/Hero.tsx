@@ -22,7 +22,6 @@ export default function Hero() {
   const startSpinner = () => {
     spinnerRef.current = setInterval(()=>{
       setSpinnerIdx((prev)=> {
-        console.log("asjkdajksd")
         if (prev >= 4) {
           return 1
         }
