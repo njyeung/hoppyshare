@@ -6,19 +6,6 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    
-    <!-- BLE Permissions -->
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    
-    <!-- BLE Permissions for Android 12+ -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    
-    <!-- BLE Feature Requirements -->
-    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -29,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HoppyShare">
         <activity
-            android:name=".MainActivity"
+            android:name="com.hoppyshare.android.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -39,7 +26,7 @@
         </activity>
         
         <activity
-            android:name=".ShareReceiveActivity"
+            android:name="com.hoppyshare.android.ShareReceiveActivity"
             android:exported="true"
             android:theme="@style/Theme.HoppyShare">
             <intent-filter>
@@ -55,12 +42,12 @@
         </activity>
         
         <activity
-            android:name=".FileConfirmActivity"
+            android:name="com.hoppyshare.android.FileConfirmActivity"
             android:exported="false"
             android:theme="@style/Theme.HoppyShare" />
         
         <activity
-            android:name=".SetupActivity"
+            android:name="com.hoppyshare.android.SetupActivity"
             android:exported="true"
             android:theme="@style/Theme.HoppyShare">
             <intent-filter>
@@ -72,7 +59,7 @@
         </activity>
         
         <activity
-            android:name=".MessageViewActivity"
+            android:name="com.hoppyshare.android.MessageViewActivity"
             android:exported="false"
             android:theme="@style/Theme.HoppyShare" />
         

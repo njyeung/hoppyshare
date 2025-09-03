@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.hoppyshare"
+    namespace = "com.hoppyshare.android"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.hoppyshare"
+        applicationId = "com.hoppyshare.android"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
