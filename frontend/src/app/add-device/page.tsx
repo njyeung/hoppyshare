@@ -145,6 +145,8 @@ export default function AddDevice() {
           <div className="bg-gray-50/90 p-6 rounded-lg">
             <h3 className="text-lg font-semibold text-secondary-darker mb-4">Linux Setup Instructions</h3>
             <ol className="list-decimal list-inside space-y-2 text-secondary-dark">
+              <li> Install the required linux <a href="/faq#linux-prereqs" className="underline text-secondary">prerequisite</a> software
+              </li>
               <li>Download the HoppyShare client for Linux</li>
               <li>Extract the downloaded file to a directory of your choice</li>
               <li>Make the binary executable:</li>

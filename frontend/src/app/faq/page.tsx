@@ -40,7 +40,7 @@ export default function FAQ() {
                 <ul className="space-y-2 ml-3">
                   <li><strong>Windows:</strong> Delete the shortcut in the Startup folder.</li>
                   <li><strong>macOS:</strong> Remove the .plist in LaunchAgents or disable via launchctl.</li>
-                  <li><strong>Linux:</strong> Remove the .desktop file from <code className="bg-gray-100 px-2 py-1 rounded">~/.config/autostart/</code>.</li>
+                  <li><strong>Linux:</strong> Remove the .desktop file from <code className="bg-gray-100 px-2 py-1 rounded break-all">~/.config/autostart/</code>.</li>
                 </ul>
               </div>
 
@@ -71,7 +71,7 @@ export default function FAQ() {
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-secondary-darker">Can I start the mobile setup from the browser?</h3>
                 <p className="leading-relaxed mb-4">
-                  <strong>No.</strong> If you visit <code className="bg-gray-100 px-2 py-1 rounded">hoppyshare.com/add-device/mobile</code> on your phone, a device will be added—but the mobile setup won't complete from the browser. The process only works when it's started inside the Android app.
+                  <strong>No.</strong> If you visit <code className="bg-gray-100 px-2 py-1 rounded break-all">hoppyshare.com/add-device/mobile</code> on your phone, a device will be added—but the mobile setup won't complete from the browser. The process only works when it's started inside the Android app.
                 </p>
               </div>
 
@@ -90,6 +90,10 @@ export default function FAQ() {
             
             <div className="ml-5 space-y-6">
               <div>
+                <h3 className="text-lg font-semibold mb-3 text-secondary-darker">Android BLE</h3>
+                <p className="leading-relaxed mb-4">
+                  BLE implementation on android is still a work in progress.
+                </p>
                 <h3 className="text-lg font-semibold mb-3 text-secondary-darker">Android settings</h3>
                 <p className="leading-relaxed mb-4">
                   Hoppyshare is not aware of the type of device that is registered. Thus, while the web gui shows all the settings for an Android device, the mobile app itself only listens for the following settings:
@@ -106,6 +110,38 @@ export default function FAQ() {
                 <p className="leading-relaxed">
                   While the windows implementation of BLE can receive messages from other devices, it cannot send messages. It is also a bit buggy and may take a while to discover peers.
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Linux prerequisite software */}
+          <div className="pb-6" id="linux-prereqs">
+            <h2 className="text-2xl font-semibold mb-3">Linux Prerequisites</h2>
+            <p className="mb-3 text-secondary-darker">Clients must have the following installed:</p>
+            <div className="ml-5 space-y-6">
+              <div>
+                <h6 className="ml-3 text-base font-semibold mb-3">gnome-keyring</h6>
+                <p className="ml-6 my-2">After installing, ensure it is running:</p>
+                <code className="ml-6 bg-gray-100 px-2 py-1 rounded break-all">
+                  gnome-keyring-daemon --start --components=secrets
+                </code>
+                <p className="ml-6 my-2">Set required environment variables (GNOME_KEYRING_CONTROL) or alternatively try dbus-launch</p>
+                <p className="ml-6 my-2">Optionally, test storing:</p>
+                <code className="ml-6 mb-3 bg-gray-100 px-2 py-1 rounded break-all">
+                  secret-tool store --label="test" application test
+                </code>
+                <p className="ml-6 my-2">Then retreiving the key:</p>
+                <code className="ml-6 bg-gray-100 px-2 py-1 rounded break-all">
+                  secret-tool lookup application test
+                </code>
+                              
+              </div>
+              <div>
+                <h6 className="ml-3 mb-3 text-base font-semibold">Clipboard interface</h6>
+                <p className="ml-6 my-2">For Wayland:</p>
+                <code className="ml-6 bg-gray-100 px-2 py-1 rounded break-all">wl-clipboard</code>
+                <p className="ml-6 my-2">For X11:</p>
+                <code className="ml-6 bg-gray-100 px-2 py-1 rounded break-all">xClip</code>
               </div>
             </div>
           </div>
