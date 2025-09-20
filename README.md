@@ -28,7 +28,9 @@ todo (for me):
 ## Architecture
 
 ```
-Frontend (Next.js/React) → Lambda Backend (AWS Lambda) →
+Frontend (Next.js/React) → Lambda Backend (AWS Lambda)
+                                    │
+                                    ▼
                       Mosquitto + API (Docker/EC2)
                                     │
                           Desktop / Mobile Clients
