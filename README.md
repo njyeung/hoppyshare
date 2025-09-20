@@ -84,10 +84,10 @@ Using `openssl`, create the following files:
 
 ### 3. Run in Developer Mode
 
-Before launching the client, set:
+Before launching the client, set the environment variable:
 
 ```bash
-export DEV_MODE=1
+DEV_MODE=1
 ```
 
 Then run the binary
