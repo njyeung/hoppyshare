@@ -31,7 +31,7 @@ todo (for me):
 Frontend (Next.js/React) → Lambda Backend (AWS Lambda)
                                     │
                                     ▼
-                      Mosquitto + API (Docker/EC2)
+                        Mosquitto + API (Docker/EC2)
                                     │
                           Desktop / Mobile Clients
 ```
