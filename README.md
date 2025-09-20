@@ -26,14 +26,14 @@ todo (for me):
 
 
 ## Architecture
+
 ```
-Frontend (Next.js/React) → Lambda Backend (AWS Lambda)
-                                    │
-                                    ▼
+Frontend (Next.js/React) → Lambda Backend (AWS Lambda) →
                       Mosquitto + API (Docker/EC2)
                                     │
                           Desktop / Mobile Clients
 ```
+
 - **Mosquitto-Docker**
   - MQTT broker with mutual TLS authentication.
   - Bundled **Flask API** for generating certificates, updating ACLs, removing/revoking devices.
