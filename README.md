@@ -1,4 +1,4 @@
-## HoppyShare
+# HoppyShare
 
 A cross-platform clipboard and file sharing tool powered by MQTT and Bluetooth Low Energy (BLE). It’s designed to make device-to-device transfers snappy, private, and reliable, without depending on big third-party clouds.
 
@@ -13,7 +13,7 @@ todo (for me):
 
 ---
 
-### Features
+## Features
 - **mTLS + End-to-End Encryption** – All communication is authenticated with mutual TLS. Data payloads are encrypted with a shared group key.
 - **MQTT Broker Backbone** – Devices publish/subscribe to a user-scoped topic. Transfers (up to 25MB) are lightweight and real-time.
 - **Offline Bluetooth Fallback** – Share files over BLE when Wi‑Fi isn’t available.
