@@ -11,7 +11,7 @@ todo (for me):
   - android needs BLE impl
 - Add a ping notification or something that you can send from the web to identify which device is which
 
----
+
 
 ## Features
 - **mTLS + End-to-End Encryption** – All communication is authenticated with mutual TLS. Data payloads are encrypted with a shared group key.
@@ -23,7 +23,7 @@ todo (for me):
   - **iOS client** – Planned.
 - **Web Dashboard** – Manage your account, devices, and settings through the web portal.
 
----
+
 
 ## Architecture
 
@@ -51,7 +51,7 @@ Frontend (Next.js/React) → Lambda Backend (AWS Lambda)
 - **Android Client** (Kotlin)
   - Works similarly to the desktop client with MQTT + BLE.
 
----
+
 
 ## Using HoppyShare
 
@@ -61,7 +61,7 @@ Hosted (Default)
 
 Certificates and keys are securely generated and delivered during onboarding. The client handles setup, registers itself for startup, and stores credentials in the OS keychain.
 
----
+
 
 ## Self-Hosting
 
@@ -98,7 +98,7 @@ Then run the binary
 
 Normally, the desktop client ships with encrypted certs/keys appended to the end. On first run, it calls the Lambda to decrypt them and moves them into the OS keychain as well as registers itself for auto-startup. Dev mode is useful for testing and self hosting because the client skips setup and keychain relocation.   
 
----
+
 
 ## Repository Structure
 
